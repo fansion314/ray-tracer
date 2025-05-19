@@ -30,7 +30,7 @@ impl Vec3f64 {
         self.length_squared().sqrt()
     }
 
-    fn length_squared(&self) -> f64 {
+    pub fn length_squared(&self) -> f64 {
         self.dot(self)
     }
 
@@ -154,6 +154,29 @@ where
     }
 }
 
+impl<T> Add<T> for &Vec3<T>
+where
+    T: Add<Output = T> + Copy,
+{
+    type Output = Vec3<T>;
+    fn add(self, rhs: T) -> Self::Output {
+        Vec3::new(self[0] + rhs, self[1] + rhs, self[2] + rhs)
+    }
+}
+
+impl<T> Add<T> for Vec3<T>
+where
+    T: AddAssign + Copy,
+{
+    type Output = Vec3<T>;
+    fn add(mut self, rhs: T) -> Self::Output {
+        self.0[0] += rhs;
+        self.0[1] += rhs;
+        self.0[2] += rhs;
+        self
+    }
+}
+
 impl<T> Sub for &Vec3<T>
 where
     T: Sub<Output = T> + Copy,
@@ -203,6 +226,29 @@ where
         self.0[0] -= rhs[0];
         self.0[1] -= rhs[1];
         self.0[2] -= rhs[2];
+        self
+    }
+}
+
+impl<T> Sub<T> for &Vec3<T>
+where
+    T: Sub<Output = T> + Copy,
+{
+    type Output = Vec3<T>;
+    fn sub(self, rhs: T) -> Self::Output {
+        Vec3::new(self[0] - rhs, self[1] - rhs, self[2] - rhs)
+    }
+}
+
+impl<T> Sub<T> for Vec3<T>
+where
+    T: SubAssign + Copy,
+{
+    type Output = Vec3<T>;
+    fn sub(mut self, rhs: T) -> Self::Output {
+        self.0[0] -= rhs;
+        self.0[1] -= rhs;
+        self.0[2] -= rhs;
         self
     }
 }

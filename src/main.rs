@@ -1,33 +1,24 @@
 mod color;
+mod hittable;
+mod hittable_list;
 mod ray;
+mod rtweekend;
+mod sphere;
 mod vec3;
 
 use crate::color::write_color;
+use crate::hittable::Hittable;
+use crate::hittable_list::HittableList;
 use crate::ray::Ray;
+use crate::sphere::Sphere;
 use crate::vec3::{Color, Point, Vec3f64};
 use std::io;
 use std::io::Write;
+use std::sync::Arc;
 
-fn hit_sphere(center: &Point, radius: f64, r: &Ray) -> f64 {
-    let oc = center - r.origin();
-    let a = r.direction().dot(r.direction());
-    let h = r.direction().dot(&oc);
-    let c = oc.dot(&oc) - radius * radius;
-    let discriminant = h * h - a * c;
-
-    if discriminant < 0.0 {
-        -1.0
-    } else {
-        (h - discriminant.sqrt()) / a
-    }
-}
-
-fn ray_color(r: &Ray) -> Color {
-    let ball_p = Point::new(0.0, 0.0, -1.0);
-    let t = hit_sphere(&ball_p, 0.5, r);
-    if t > 0.0 {
-        let n = (r.at(t) - &ball_p).into_unit_vector();
-        return Color::new(n.x() + 1.0, n.y() + 1.0, n.z() + 1.0) * 0.5;
+fn ray_color(r: &Ray, world: &dyn Hittable) -> Color {
+    if let Some(rec) = world.hit(r, 0.0, f64::INFINITY) {
+        return (rec.normal + 1.0) * 0.5;
     }
 
     let unit_direction = r.direction().unit_vector();
@@ -46,6 +37,13 @@ fn main() -> io::Result<()> {
     // Calculate the image height, and ensure that it's at least 1.
     let image_height = (image_width as f64 / aspect_ratio) as i32;
     let image_height = if image_height < 1 { 1 } else { image_height };
+
+    // World
+
+    let mut world = HittableList::default();
+
+    world.add(Arc::new(Sphere::new(Point::new(0.0, 0.0, -1.0), 0.5)));
+    world.add(Arc::new(Sphere::new(Point::new(0.0, -100.5, -1.0), 100.0)));
 
     // Camera
 
@@ -84,7 +82,7 @@ fn main() -> io::Result<()> {
             let ray_direction = pixel_center - &camera_center;
             let r = Ray::new(camera_center.clone(), ray_direction);
 
-            let pixel_color = ray_color(&r);
+            let pixel_color = ray_color(&r, &world);
             write_color(io::stdout(), &pixel_color)?;
         }
     }
