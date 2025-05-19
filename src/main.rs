@@ -1,6 +1,7 @@
 mod color;
 mod hittable;
 mod hittable_list;
+mod interval;
 mod ray;
 mod rtweekend;
 mod sphere;
@@ -9,6 +10,7 @@ mod vec3;
 use crate::color::write_color;
 use crate::hittable::Hittable;
 use crate::hittable_list::HittableList;
+use crate::interval::Interval;
 use crate::ray::Ray;
 use crate::sphere::Sphere;
 use crate::vec3::{Color, Point, Vec3f64};
@@ -17,7 +19,7 @@ use std::io::Write;
 use std::sync::Arc;
 
 fn ray_color(r: &Ray, world: &dyn Hittable) -> Color {
-    if let Some(rec) = world.hit(r, 0.0, f64::INFINITY) {
+    if let Some(rec) = world.hit(r, Interval::new(0.0, f64::INFINITY)) {
         return (rec.normal + 1.0) * 0.5;
     }
 
@@ -44,6 +46,7 @@ fn main() -> io::Result<()> {
 
     world.add(Arc::new(Sphere::new(Point::new(0.0, 0.0, -1.0), 0.5)));
     world.add(Arc::new(Sphere::new(Point::new(0.0, -100.5, -1.0), 100.0)));
+    world.add(Arc::new(Sphere::new(Point::new(1.3, 0.5, -2.0), 0.7)));
 
     // Camera
 
