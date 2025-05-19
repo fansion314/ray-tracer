@@ -128,14 +128,15 @@ where
 
 impl<T> Add for Vec3<T>
 where
-    T: AddAssign + Copy,
+    T: AddAssign,
 {
     type Output = Vec3<T>;
 
     fn add(mut self, rhs: Self) -> Self::Output {
-        self.0[0] += rhs[0];
-        self.0[1] += rhs[1];
-        self.0[2] += rhs[2];
+        let [x, y, z] = rhs.0;
+        self.0[0] += x;
+        self.0[1] += y;
+        self.0[2] += z;
         self
     }
 }
@@ -204,14 +205,15 @@ where
 
 impl<T> Sub for Vec3<T>
 where
-    T: SubAssign + Copy,
+    T: SubAssign,
 {
     type Output = Vec3<T>;
 
     fn sub(mut self, rhs: Self) -> Self::Output {
-        self.0[0] -= rhs[0];
-        self.0[1] -= rhs[1];
-        self.0[2] -= rhs[2];
+        let [x, y, z] = rhs.0;
+        self.0[0] -= x;
+        self.0[1] -= y;
+        self.0[2] -= z;
         self
     }
 }
@@ -279,13 +281,14 @@ where
 
 impl<T> Mul for Vec3<T>
 where
-    T: MulAssign + Copy,
+    T: MulAssign,
 {
     type Output = Vec3<T>;
     fn mul(mut self, rhs: Self) -> Self::Output {
-        self.0[0] *= rhs[0];
-        self.0[1] *= rhs[1];
-        self.0[2] *= rhs[2];
+        let [x, y, z] = rhs.0;
+        self.0[0] *= x;
+        self.0[1] *= y;
+        self.0[2] *= z;
         self
     }
 }
