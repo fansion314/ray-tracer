@@ -13,7 +13,14 @@ const INTERVAL_UNIVERSE: Interval = Interval {
 };
 
 impl Interval {
-    pub fn new(min: f64, max: f64) -> Self {
+    pub fn new() -> Self {
+        Self {
+            min: f64::INFINITY,
+            max: -f64::INFINITY,
+        }
+    }
+
+    pub fn from(min: f64, max: f64) -> Self {
         Self { min, max }
     }
 
@@ -32,9 +39,6 @@ impl Interval {
 
 impl Default for Interval {
     fn default() -> Self {
-        Self {
-            min: f64::INFINITY,
-            max: -f64::INFINITY,
-        }
+        Self::new()
     }
 }
