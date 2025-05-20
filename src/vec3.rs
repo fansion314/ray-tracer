@@ -1,3 +1,4 @@
+use crate::color::Color;
 use std::fmt::{Debug, Display, Formatter};
 use std::ops::{
     Add, AddAssign, Div, DivAssign, Index, IndexMut, Mul, MulAssign, Neg, Sub, SubAssign,
@@ -7,7 +8,6 @@ use std::ops::{
 pub struct Vec3<T>([T; 3]);
 pub type Vec3f64 = Vec3<f64>;
 pub type Point = Vec3f64;
-pub type Color = Vec3f64;
 
 impl<T> Vec3<T> {
     pub fn new(x: T, y: T, z: T) -> Self {
@@ -26,6 +26,10 @@ impl<T> Vec3<T> {
 }
 
 impl Vec3f64 {
+    pub fn zero() -> Self {
+        Self::new(0.0, 0.0, 0.0)
+    }
+
     pub fn length(&self) -> f64 {
         self.length_squared().sqrt()
     }
@@ -133,11 +137,20 @@ where
     type Output = Vec3<T>;
 
     fn add(mut self, rhs: Self) -> Self::Output {
+        self += rhs;
+        self
+    }
+}
+
+impl<T> AddAssign for Vec3<T>
+where
+    T: AddAssign,
+{
+    fn add_assign(&mut self, rhs: Self) {
         let [x, y, z] = rhs.0;
         self.0[0] += x;
         self.0[1] += y;
         self.0[2] += z;
-        self
     }
 }
 
@@ -323,10 +336,19 @@ where
 {
     type Output = Vec3<T>;
     fn mul(mut self, rhs: T) -> Self::Output {
+        self *= rhs;
+        self
+    }
+}
+
+impl<T> MulAssign<T> for Vec3<T>
+where
+    T: MulAssign + Copy,
+{
+    fn mul_assign(&mut self, rhs: T) {
         self.0[0] *= rhs;
         self.0[1] *= rhs;
         self.0[2] *= rhs;
-        self
     }
 }
 

@@ -15,11 +15,6 @@ use crate::vec3::Point;
 use std::sync::Arc;
 
 fn main() {
-    // Image
-
-    let aspect_ratio = 16.0 / 9.0;
-    let image_width = 400;
-
     // World
 
     let mut world = HittableList::default();
@@ -30,7 +25,11 @@ fn main() {
 
     // Camera
 
-    let camera = Camera::new(image_width, aspect_ratio);
+    let aspect_ratio = 16.0 / 9.0;
+    let image_width = 400;
+    let samples_per_pixel = 100;
+
+    let camera = Camera::new(image_width, aspect_ratio, samples_per_pixel);
     if let Err(e) = camera.render(&world) {
         eprintln!("Error: {e}");
     }
