@@ -49,6 +49,12 @@ impl Vec3f64 {
         self.dot(self)
     }
 
+    pub fn near_zero(&self) -> bool {
+        // Return true if the vector is close to zero in all dimensions.
+        let s = 1e-8;
+        self[0].abs() < s && self[1].abs() < s && self[2].abs() < s
+    }
+
     pub fn dot(&self, v: &Self) -> f64 {
         self[0] * v[0] + self[1] * v[1] + self[2] * v[2]
     }
@@ -87,6 +93,10 @@ impl Vec3f64 {
         } else {
             -on_unit_sphere
         }
+    }
+
+    pub fn reflect(&self, n: &Self) -> Self {
+        self - n * self.dot(n) * 2.0
     }
 }
 
