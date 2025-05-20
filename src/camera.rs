@@ -1,16 +1,19 @@
-use crate::color::{write_color, Color};
+use crate::color::{Color, write_color};
 use crate::hittable::Hittable;
 use crate::interval::Interval;
 use crate::ray::Ray;
 use crate::vec3::{Point, Vec3f64};
-use std::io;
-use std::io::Write;
+use rayon::prelude::*;
+use std::io::{self, Write};
+use std::sync::Arc;
+use std::sync::atomic::{AtomicUsize, Ordering};
 
 #[derive(Default)]
 pub struct Camera {
     image_width: i32,       // Rendered image width in pixel count
     aspect_ratio: f64,      // Ratio of image width over height
     samples_per_pixel: i32, // Count of random samples for each pixel
+    max_depth: i32,         // Maximum number of ray bounces into scene
 
     image_height: i32,        // Rendered image height
     pixel_samples_scale: f64, // Color scale factor for a sum of pixel samples
@@ -21,36 +24,67 @@ pub struct Camera {
 }
 
 impl Camera {
-    pub fn new(image_width: i32, aspect_ratio: f64, samples_per_pixel: i32) -> Self {
+    pub fn new(
+        image_width: i32,
+        aspect_ratio: f64,
+        samples_per_pixel: i32,
+        max_depth: i32,
+    ) -> Self {
         Self {
             image_width,
             aspect_ratio,
             samples_per_pixel,
+            max_depth,
             ..Self::default()
         }
         .with_initialized()
     }
 
     pub fn render(&self, world: &dyn Hittable) -> io::Result<()> {
+        let width = self.image_width as usize;
+        let height = self.image_height as usize;
+        let samples = self.samples_per_pixel;
+        let max_depth = self.max_depth;
+        let scale = self.pixel_samples_scale;
+
+        // Allocate a buffer for all pixels
+        let mut buffer = vec![Color::zero(); width * height];
+
+        // Shared progress counter
+        let counter = Arc::new(AtomicUsize::new(0));
         let mut stderr = io::stderr();
-        let mut stdout = io::stdout();
 
-        // Render
-
-        println!("P3\n{} {} \n255\n", self.image_width, self.image_height);
-
-        for j in 0..self.image_height {
-            write!(stderr, "\rScanlines remaining: {} ", self.image_height - j)?;
-            stderr.flush()?;
-
-            for i in 0..self.image_width {
-                let mut pixel_color = Color::zero();
-                for _ in 0..self.samples_per_pixel {
-                    let r = self.get_ray(i, j);
-                    pixel_color += self.ray_color(&r, world);
+        // Parallel fill: split by rows (j)
+        buffer
+            .par_chunks_mut(width)
+            .enumerate()
+            .for_each(|(j, row)| {
+                for i in 0..width {
+                    let mut col = Color::zero();
+                    for _ in 0..samples {
+                        let r = self.get_ray(i as u32, j as u32);
+                        col += self.ray_color(&r, max_depth, world);
+                    }
+                    row[i] = col * scale;
                 }
-                pixel_color *= self.pixel_samples_scale;
-                write_color(&mut stdout, &pixel_color)?;
+
+                let prev = counter.fetch_add(1, Ordering::SeqCst);
+                if prev % 10 == 0 {
+                    let mut stderr = stderr.lock();
+                    write!(stderr, "\rScanlines remaining: {}    ", height - prev).ok();
+                    stderr.flush().ok();
+                }
+            });
+
+        // Output
+        write!(stderr, "\rWriting to file...       ")?;
+
+        let mut stdout = io::stdout();
+        writeln!(stdout, "P3\n{} {} \n255\n", width, height)?;
+
+        for j in 0..height {
+            for i in 0..width {
+                write_color(&mut stdout, &buffer[j * width + i])?;
             }
         }
 
@@ -97,7 +131,7 @@ impl Camera {
         self
     }
 
-    fn get_ray(&self, i: i32, j: i32) -> Ray {
+    fn get_ray(&self, i: u32, j: u32) -> Ray {
         // Construct a camera ray originating from the origin and directed at randomly sampled
         // point around the pixel location i, j.
 
@@ -121,9 +155,16 @@ impl Camera {
         )
     }
 
-    fn ray_color(&self, r: &Ray, world: &dyn Hittable) -> Color {
-        if let Some(rec) = world.hit(r, Interval::from(0.0, f64::INFINITY)) {
-            return (rec.normal + 1.0) * 0.5;
+    fn ray_color(&self, r: &Ray, depth: i32, world: &dyn Hittable) -> Color {
+        // If we've exceeded the ray bounce limit, no more light is gathered.
+        if depth <= 0 {
+            return Color::zero();
+        }
+
+        if let Some(rec) = world.hit(r, Interval::from(0.001, f64::INFINITY)) {
+            let direction = Point::random_on_hemisphere(&rec.normal);
+            let ray = Ray::new(rec.p, direction);
+            return self.ray_color(&ray, depth - 1, world) * 0.5;
         }
 
         let unit_direction = r.direction().unit_vector();

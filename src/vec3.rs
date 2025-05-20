@@ -1,4 +1,3 @@
-use crate::color::Color;
 use std::fmt::{Debug, Display, Formatter};
 use std::ops::{
     Add, AddAssign, Div, DivAssign, Index, IndexMut, Mul, MulAssign, Neg, Sub, SubAssign,
@@ -30,6 +29,18 @@ impl Vec3f64 {
         Self::new(0.0, 0.0, 0.0)
     }
 
+    pub fn random() -> Self {
+        Self::random_range(0.0, 1.0)
+    }
+
+    pub fn random_range(min: f64, max: f64) -> Self {
+        Self::new(
+            rand::random_range(min..max),
+            rand::random_range(min..max),
+            rand::random_range(min..max),
+        )
+    }
+
     pub fn length(&self) -> f64 {
         self.length_squared().sqrt()
     }
@@ -57,6 +68,25 @@ impl Vec3f64 {
     pub fn into_unit_vector(self) -> Self {
         let l = self.length();
         self / l
+    }
+
+    pub fn random_unit_vector() -> Self {
+        loop {
+            let p = Self::random_range(-1.0, 1.0);
+            let lensq = p.length_squared();
+            if 1e-160 < lensq && lensq < 1.0 {
+                return p / lensq;
+            }
+        }
+    }
+
+    pub fn random_on_hemisphere(normal: &Vec3f64) -> Self {
+        let on_unit_sphere = Self::random_unit_vector();
+        if on_unit_sphere.dot(normal) > 0.0 {
+            on_unit_sphere
+        } else {
+            -on_unit_sphere
+        }
     }
 }
 

@@ -26,10 +26,11 @@ fn main() {
     // Camera
 
     let aspect_ratio = 16.0 / 9.0;
-    let image_width = 400;
+    let image_width = 2000;
     let samples_per_pixel = 100;
+    let max_depth = 50;
 
-    let camera = Camera::new(image_width, aspect_ratio, samples_per_pixel);
+    let camera = Camera::new(image_width, aspect_ratio, samples_per_pixel, max_depth);
     if let Err(e) = camera.render(&world) {
         eprintln!("Error: {e}");
     }
