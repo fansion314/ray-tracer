@@ -11,12 +11,15 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 
 #[derive(Default)]
 pub struct Camera {
-    image_width: i32,       // Rendered image width in pixel count
-    aspect_ratio: f64,      // Ratio of image width over height
-    samples_per_pixel: i32, // Count of random samples for each pixel
-    max_depth: i32,         // Maximum number of ray bounces into scene
+    pub image_width: i32,       // Rendered image width in pixel count
+    pub aspect_ratio: f64,      // Ratio of image width over height
+    pub samples_per_pixel: i32, // Count of random samples for each pixel
+    pub max_depth: i32,         // Maximum number of ray bounces into scene
 
-    vfov: f64, // Vertical view angle (field of view)
+    pub vfov: f64,       // Vertical view angle (field of view)
+    pub lookfrom: Point, // Point camera is looking from
+    pub lookat: Point,   // Point camera is looking at
+    pub vup: Vec3f64,    // Camera-relative "up" direction
 
     image_height: i32,        // Rendered image height
     pixel_samples_scale: f64, // Color scale factor for a sum of pixel samples
@@ -24,27 +27,12 @@ pub struct Camera {
     pixel00_loc: Point,       // Location of pixel 0, 0
     pixel_delta_u: Vec3f64,   // Offset to pixel to the right
     pixel_delta_v: Vec3f64,   // Offset to pixel below
+    u: Vec3f64,               // Camera frame basis vectors
+    v: Vec3f64,
+    w: Vec3f64,
 }
 
 impl Camera {
-    pub fn new(
-        image_width: i32,
-        aspect_ratio: f64,
-        samples_per_pixel: i32,
-        max_depth: i32,
-        vfov: f64,
-    ) -> Self {
-        Self {
-            image_width,
-            aspect_ratio,
-            samples_per_pixel,
-            max_depth,
-            vfov,
-            ..Self::default()
-        }
-        .with_initialized()
-    }
-
     pub fn render(&self, world: &dyn Hittable) -> io::Result<()> {
         let width = self.image_width as usize;
         let height = self.image_height as usize;
@@ -97,7 +85,7 @@ impl Camera {
         Ok(())
     }
 
-    fn with_initialized(mut self) -> Self {
+    pub fn with_initialized(mut self) -> Self {
         // Image
 
         // Calculate the image height, and ensure that it's at least 1.
@@ -110,29 +98,31 @@ impl Camera {
 
         self.pixel_samples_scale = 1.0 / self.samples_per_pixel as f64;
 
-        self.center = Point::zero();
+        self.center = self.lookfrom.clone();
 
         // Determine viewport dimensions.
-        let focal_length = 1.0;
+        let focal_length = (&self.lookfrom - &self.lookat).length();
         let theta = degrees_to_radians(self.vfov);
         let h = (theta / 2.0).tan();
         // Viewport widths less than one are ok since they are real valued.
         let viewport_height = 2.0 * h * focal_length;
         let viewport_width = viewport_height * (self.image_width as f64 / self.image_height as f64);
 
+        self.w = (&self.lookfrom - &self.lookat).into_unit_vector();
+        self.u = self.vup.cross(&self.w).into_unit_vector();
+        self.v = self.w.cross(&self.u);
+
         // Calculate the vectors across the horizontal and down the vertical viewport edges.
-        let viewport_u = Vec3f64::new(viewport_width, 0.0, 0.0);
-        let viewport_v = Vec3f64::new(0.0, -viewport_height, 0.0);
+        let viewport_u = &self.u * viewport_width; // Vector across viewport horizontal edge
+        let viewport_v = &self.v * (-viewport_height); // Vector down viewport vertical edge
 
         // Calculate the horizontal and vertical delta vectors from pixel to pixel.
         self.pixel_delta_u = &viewport_u / self.image_width as f64;
         self.pixel_delta_v = &viewport_v / self.image_height as f64;
 
         // Calculate the location of the upper left pixel.
-        let viewport_upper_left = &self.center
-            - Vec3f64::new(0.0, 0.0, focal_length)
-            - (&viewport_u / 2.0)
-            - (&viewport_v / 2.0);
+        let viewport_upper_left =
+            &self.center - &self.w * focal_length - (&viewport_u / 2.0) - (&viewport_v / 2.0);
         self.pixel00_loc = &viewport_upper_left + (&self.pixel_delta_u + &self.pixel_delta_v) * 0.5;
 
         self
