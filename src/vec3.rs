@@ -25,8 +25,16 @@ impl<T> Vec3<T> {
 }
 
 impl Vec3f64 {
+    pub fn all(e: f64) -> Self {
+        Self::new(e, e, e)
+    }
+
     pub fn zero() -> Self {
-        Self::new(0.0, 0.0, 0.0)
+        Self::all(0.0)
+    }
+
+    pub fn one() -> Self {
+        Self::all(1.0)
     }
 
     pub fn random() -> Self {
@@ -96,7 +104,16 @@ impl Vec3f64 {
     }
 
     pub fn reflect(&self, n: &Self) -> Self {
-        self - n * self.dot(n) * 2.0
+        let v = self;
+        v - n * v.dot(n) * 2.0
+    }
+
+    pub fn refract(&self, n: &Self, etai_over_etat: f64) -> Self {
+        let uv = self;
+        let cos_theta = (-uv.dot(n)).min(1.0);
+        let r_out_perp = (uv + n * cos_theta) * etai_over_etat;
+        let r_out_parallel = -n * (1.0 - r_out_perp.length_squared()).abs().sqrt();
+        r_out_perp + r_out_parallel
     }
 }
 
