@@ -10,7 +10,7 @@ pub type Point = Vec3f64;
 
 impl<T> Vec3<T> {
     pub fn new(x: T, y: T, z: T) -> Self {
-        Self { 0: [x, y, z] }
+        Self([x, y, z])
     }
 
     pub fn x(&self) -> &T {
@@ -100,6 +100,19 @@ impl Vec3f64 {
             on_unit_sphere
         } else {
             -on_unit_sphere
+        }
+    }
+
+    pub fn random_in_unit_disk() -> Self {
+        loop {
+            let p = Self::new(
+                rand::random_range(-1.0..1.0),
+                rand::random_range(-1.0..1.0),
+                0.0,
+            );
+            if p.length_squared() < 1.0 {
+                return p;
+            }
         }
     }
 
