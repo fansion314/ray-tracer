@@ -14,6 +14,7 @@ pub struct Interval {
 
 impl Interval {
     pub const fn new() -> Self {
+        // Default interval is empty
         Self {
             min: f64::INFINITY,
             max: -f64::INFINITY,
@@ -22,6 +23,11 @@ impl Interval {
 
     pub const fn from(min: f64, max: f64) -> Self {
         Self { min, max }
+    }
+
+    pub fn from_intervals(a: &Self, b: &Self) -> Self {
+        // Create the interval tightly enclosing the two input intervals.
+        Self::from(a.min.min(b.min), a.max.max(b.max))
     }
 
     // pub fn size(&self) -> f64 {
@@ -44,6 +50,13 @@ impl Interval {
         } else {
             x
         }
+    }
+
+    pub fn into_expand(mut self, delta: f64) -> Self {
+        let padding = delta / 2.0;
+        self.min = self.min - padding;
+        self.max = self.max + padding;
+        self
     }
 }
 
