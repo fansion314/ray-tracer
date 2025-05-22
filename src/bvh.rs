@@ -60,8 +60,7 @@ impl BVHNode {
     fn box_compare(a: &dyn Hittable, b: &dyn Hittable, axis_index: usize) -> std::cmp::Ordering {
         a.bounding_box()[axis_index]
             .min
-            .partial_cmp(&b.bounding_box()[axis_index].min)
-            .unwrap()
+            .total_cmp(&b.bounding_box()[axis_index].min)
     }
 
     fn box_compare_x(a: &dyn Hittable, b: &dyn Hittable) -> std::cmp::Ordering {
