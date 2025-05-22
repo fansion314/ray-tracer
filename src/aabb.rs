@@ -1,12 +1,13 @@
 use std::ops::Index;
 
+use crate::interval::{INTERVAL_EMPTY, INTERVAL_UNIVERSE};
 use crate::ray::Ray;
 use crate::{interval::Interval, vec3::Point};
 
 #[derive(Default)]
-pub struct Aabb([Interval; 3]);
+pub struct AABB([Interval; 3]);
 
-impl Aabb {
+impl AABB {
     pub fn new(x: Interval, y: Interval, z: Interval) -> Self {
         Self([x, y, z])
     }
@@ -34,12 +35,20 @@ impl Aabb {
         Self::new(x, y, z)
     }
 
-    pub fn from_aabbs(box0: &Aabb, box1: &Aabb) -> Self {
+    pub fn from_aabbs(box0: &AABB, box1: &AABB) -> Self {
         Self::new(
             Interval::from_intervals(&box0[0], &box1[0]),
             Interval::from_intervals(&box0[1], &box1[1]),
             Interval::from_intervals(&box0[2], &box1[2]),
         )
+    }
+
+    pub fn empty() -> Self {
+        Self::new(INTERVAL_EMPTY, INTERVAL_EMPTY, INTERVAL_EMPTY)
+    }
+
+    pub fn universe() -> Self {
+        Self::new(INTERVAL_UNIVERSE, INTERVAL_UNIVERSE, INTERVAL_UNIVERSE)
     }
 
     pub fn hit(&self, r: &Ray, mut ray_t: Interval) -> bool {
@@ -76,9 +85,27 @@ impl Aabb {
 
         true
     }
+
+    pub fn longest_axis(&self) -> usize {
+        // Returns the index of the longest axis of the bounding box.
+
+        if self[0].size() > self[1].size() {
+            if self[0].size() > self[2].size() {
+                0
+            } else {
+                2
+            }
+        } else {
+            if self[1].size() > self[2].size() {
+                1
+            } else {
+                2
+            }
+        }
+    }
 }
 
-impl Index<usize> for Aabb {
+impl Index<usize> for AABB {
     type Output = Interval;
 
     fn index(&self, index: usize) -> &Self::Output {

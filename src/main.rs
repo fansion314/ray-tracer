@@ -1,4 +1,5 @@
 mod aabb;
+mod bvh;
 mod camera;
 mod color;
 mod hittable;
@@ -10,6 +11,7 @@ mod rtweekend;
 mod sphere;
 mod vec3;
 
+use crate::bvh::BVHNode;
 use crate::camera::Camera;
 use crate::color::Color;
 use crate::hittable_list::HittableList;
@@ -88,13 +90,19 @@ fn main() {
         material3,
     )));
 
+    world = {
+        let mut bvh = HittableList::default();
+        bvh.add(Arc::new(BVHNode::from(&mut world)));
+        bvh
+    };
+
     // Camera
 
     let camera = {
         let mut c = Camera::default();
 
         c.aspect_ratio = 16.0 / 9.0;
-        c.image_width = 400;
+        c.image_width = 1000;
         c.samples_per_pixel = 100;
         c.max_depth = 50;
 
