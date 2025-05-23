@@ -6,6 +6,7 @@ mod hittable;
 mod hittable_list;
 mod interval;
 mod material;
+mod perlin;
 mod ray;
 mod rtweekend;
 mod rtwimage;
@@ -19,7 +20,7 @@ use crate::color::Color;
 use crate::hittable_list::HittableList;
 use crate::material::{Dielectric, Lambertian, Metal};
 use crate::sphere::Sphere;
-use crate::texture::{CheckerTexture, ImageTexture};
+use crate::texture::{CheckerTexture, ImageTexture, NoiseTexture};
 use crate::vec3::{Point, Vec3f64};
 use rand::random_range;
 use std::sync::Arc;
@@ -197,11 +198,50 @@ fn earth() {
     }
 }
 
+fn perlin_spheres() {
+    let mut world = HittableList::default();
+
+    let pertext = Arc::new(NoiseTexture::default());
+    world.add(Arc::new(Sphere::new(
+        Point::new(0.0, -1000.0, 0.0),
+        1000.0,
+        Arc::new(Lambertian::new(pertext.clone())),
+    )));
+    world.add(Arc::new(Sphere::new(
+        Point::new(0.0, 2.0, 0.0),
+        2.0,
+        Arc::new(Lambertian::new(pertext)),
+    )));
+
+    let camera = {
+        let mut c = Camera::default();
+
+        c.aspect_ratio = 16.0 / 9.0;
+        c.image_width = 1000;
+        c.samples_per_pixel = 100;
+        c.max_depth = 50;
+
+        c.vfov = 20.0;
+        c.lookfrom = Point::new(13.0, 2.0, 3.0);
+        c.lookat = Point::new(0.0, 0.0, 0.0);
+        c.vup = Vec3f64::new(0.0, 1.0, 0.0);
+
+        c.defocus_angle = 0.0;
+
+        c.with_initialized()
+    };
+
+    if let Err(e) = camera.render(&world, "perlin.png") {
+        eprintln!("Error: {e}");
+    }
+}
+
 fn main() {
-    match 3 {
+    match 4 {
         1 => bouncing_spheres(),
         2 => checkered_spheres(),
         3 => earth(),
+        4 => perlin_spheres(),
         _ => {}
     }
 }

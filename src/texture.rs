@@ -1,5 +1,6 @@
 use crate::color::Color;
 use crate::interval::Interval;
+use crate::perlin::Perlin;
 use crate::rtwimage::RtwImage;
 use crate::vec3::Point;
 use std::sync::Arc;
@@ -81,7 +82,7 @@ impl ImageTexture {
 impl Texture for ImageTexture {
     fn value(&self, mut u: f64, mut v: f64, _p: &Point) -> Color {
         // If we have no texture data, then return solid cyan as a debugging aid.
-        if self.image.height() <= 0 {
+        if self.image.no_data() {
             return Color::new(0.0, 1.0, 1.0);
         }
 
@@ -101,5 +102,16 @@ impl Texture for ImageTexture {
             (color_scale * pixel[1] as f64).powi(2),
             (color_scale * pixel[2] as f64).powi(2),
         )
+    }
+}
+
+#[derive(Default)]
+pub struct NoiseTexture {
+    noise: Perlin,
+}
+
+impl Texture for NoiseTexture {
+    fn value(&self, _u: f64, _v: f64, p: &Point) -> Color {
+        Color::one() * self.noise.noise(p)
     }
 }

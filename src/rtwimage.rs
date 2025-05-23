@@ -78,6 +78,10 @@ impl RtwImage {
         self.height
     }
 
+    pub fn no_data(&self) -> bool {
+        self.bdata.is_none()
+    }
+
     pub fn pixel_data(&self, x: u32, y: u32) -> &[u8] {
         // Return the slice of the three RGB bytes of the pixel at x,y. If there is no image
         // data, return magenta.
