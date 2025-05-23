@@ -104,6 +104,9 @@ impl Camera {
         self.pixel_samples_scale = 1.0 / self.samples_per_pixel as f64;
 
         self.center = self.lookfrom.clone();
+        if self.focus_dist < f64::EPSILON {
+            self.focus_dist = (&self.lookat - &self.lookfrom).length();
+        }
 
         // Determine viewport dimensions.
         let theta = degrees_to_radians(self.vfov);
