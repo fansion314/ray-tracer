@@ -8,6 +8,7 @@ mod interval;
 mod material;
 mod ray;
 mod rtweekend;
+mod rtwimage;
 mod sphere;
 mod texture;
 mod vec3;
@@ -18,7 +19,7 @@ use crate::color::Color;
 use crate::hittable_list::HittableList;
 use crate::material::{Dielectric, Lambertian, Metal};
 use crate::sphere::Sphere;
-use crate::texture::CheckerTexture;
+use crate::texture::{CheckerTexture, ImageTexture};
 use crate::vec3::{Point, Vec3f64};
 use rand::random_range;
 use std::sync::Arc;
@@ -168,10 +169,39 @@ fn checkered_spheres() {
     }
 }
 
+fn earth() {
+    let earth_texture = Arc::new(ImageTexture::new("earthmap.jpg"));
+    let earth_surface = Arc::new(Lambertian::new(earth_texture));
+    let globe = Sphere::new(Point::zero(), 2.0, earth_surface);
+
+    let camera = {
+        let mut c = Camera::default();
+
+        c.aspect_ratio = 16.0 / 9.0;
+        c.image_width = 1000;
+        c.samples_per_pixel = 100;
+        c.max_depth = 50;
+
+        c.vfov = 20.0;
+        c.lookfrom = Point::new(0.0, 0.0, 12.0);
+        c.lookat = Point::new(0.0, 0.0, 0.0);
+        c.vup = Vec3f64::new(0.0, 1.0, 0.0);
+
+        c.defocus_angle = 0.0;
+
+        c.with_initialized()
+    };
+
+    if let Err(e) = camera.render(&globe, "globe.png") {
+        eprintln!("Error: {e}");
+    }
+}
+
 fn main() {
-    match 2 {
+    match 3 {
         1 => bouncing_spheres(),
         2 => checkered_spheres(),
+        3 => earth(),
         _ => {}
     }
 }
