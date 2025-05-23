@@ -20,7 +20,7 @@ use crate::camera::Camera;
 use crate::color::Color;
 use crate::hittable_list::HittableList;
 use crate::material::{Dielectric, Lambertian, Metal};
-use crate::quad::Quad;
+use crate::quad::{Quad, Shape2D};
 use crate::sphere::Sphere;
 use crate::texture::{CheckerTexture, ImageTexture, NoiseTexture};
 use crate::vec3::{Point, Vec3f64};
@@ -254,6 +254,7 @@ fn quads() {
         Vec3f64::new(0.0, 0.0, -4.0),
         Vec3f64::new(0.0, 4.0, 0.0),
         left_red,
+        Shape2D::Parallelogram,
     )));
 
     world.add(Arc::new(Quad::new(
@@ -261,13 +262,15 @@ fn quads() {
         Vec3f64::new(4.0, 0.0, 0.0),
         Vec3f64::new(0.0, 4.0, 0.0),
         back_green,
+        Shape2D::Triangle,
     )));
 
     world.add(Arc::new(Quad::new(
-        Point::new(3.0, -2.0, 1.0),
-        Vec3f64::new(0.0, 0.0, 4.0),
-        Vec3f64::new(0.0, 4.0, 0.0),
+        Point::new(3.0, 0.0, 3.0),
+        Vec3f64::new(0.0, 0.0, 2.0),
+        Vec3f64::new(0.0, 2.0, 0.0),
         right_blue,
+        Shape2D::Circle,
     )));
 
     world.add(Arc::new(Quad::new(
@@ -275,6 +278,7 @@ fn quads() {
         Vec3f64::new(4.0, 0.0, 0.0),
         Vec3f64::new(0.0, 0.0, 4.0),
         upper_orange,
+        Shape2D::Triangle,
     )));
 
     world.add(Arc::new(Quad::new(
@@ -282,6 +286,7 @@ fn quads() {
         Vec3f64::new(4.0, 0.0, 0.0),
         Vec3f64::new(0.0, 0.0, -4.0),
         lower_teal,
+        Shape2D::Parallelogram,
     )));
 
     let camera = {

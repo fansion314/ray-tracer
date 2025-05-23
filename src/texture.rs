@@ -17,10 +17,6 @@ impl SolidColor {
     pub fn from(albedo: Color) -> Self {
         Self { albedo }
     }
-
-    pub fn from_rgb(red: f64, green: f64, blue: f64) -> Self {
-        Self::from(Color::new(red, green, blue))
-    }
 }
 
 impl Texture for SolidColor {

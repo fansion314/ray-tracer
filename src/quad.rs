@@ -6,6 +6,14 @@ use crate::ray::Ray;
 use crate::vec3::{Point, Vec3f64};
 use std::sync::Arc;
 
+pub enum Shape2D {
+    Parallelogram,
+    Triangle,
+    Circle,
+}
+
+type Shape2DFn = fn(f64, f64) -> bool;
+
 pub struct Quad {
     q: Point,
     u: Vec3f64,
@@ -16,10 +24,11 @@ pub struct Quad {
     bbox: AABB,
     normal: Vec3f64,
     d: f64,
+    contains_fn: Shape2DFn,
 }
 
 impl Quad {
-    pub fn new(q: Point, u: Vec3f64, v: Vec3f64, mat: Arc<dyn Material>) -> Self {
+    pub fn new(q: Point, u: Vec3f64, v: Vec3f64, mat: Arc<dyn Material>, shape: Shape2D) -> Self {
         let bbox_diagonal1 = AABB::from_points(&q, &(&q + &u + &v));
         let bbox_diagonal2 = AABB::from_points(&(&q + &u), &(&q + &v));
         let n = u.cross(&v);
@@ -35,16 +44,17 @@ impl Quad {
             bbox: AABB::from_aabbs(&bbox_diagonal1, &bbox_diagonal2),
             normal,
             d,
+            contains_fn: Self::shape2d_contains_fn(shape),
         }
     }
 
-    fn is_interior(a: f64, b: f64) -> Option<(f64, f64)> {
-        // Given the hit point in plane coordinates, return false if it is outside the
-        // primitive, otherwise set the hit record UV coordinates and return true.
-        if INTERVAL_01.contains(a) && INTERVAL_01.contains(b) {
-            Some((a, b))
-        } else {
-            None
+    fn shape2d_contains_fn(shape: Shape2D) -> Shape2DFn {
+        match shape {
+            Shape2D::Parallelogram => {
+                |a: f64, b: f64| INTERVAL_01.contains(a) && INTERVAL_01.contains(b)
+            }
+            Shape2D::Triangle => |a: f64, b: f64| a > 0.0 && b > 0.0 && a + b < 1.0,
+            Shape2D::Circle => |a: f64, b: f64| a * a + b * b < 1.0,
         }
     }
 }
@@ -70,7 +80,9 @@ impl Hittable for Quad {
         let alpha = self.w.dot(&planar_hitpt_vector.cross(&self.v));
         let beta = self.w.dot(&self.u.cross(&planar_hitpt_vector));
 
-        let uv = Self::is_interior(alpha, beta)?;
+        if !(self.contains_fn)(alpha, beta) {
+            return None;
+        }
 
         Some(HitRecord::new(
             r,
@@ -78,7 +90,7 @@ impl Hittable for Quad {
             intersection,
             self.normal.clone(),
             self.mat.clone(),
-            uv,
+            (alpha, beta),
         ))
     }
 
