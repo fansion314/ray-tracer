@@ -120,7 +120,7 @@ fn bouncing_spheres() {
         c.with_initialized()
     };
 
-    if let Err(e) = camera.render(&world) {
+    if let Err(e) = camera.render(&world, "image.png") {
         eprintln!("Error: {e}");
     }
 }
@@ -163,7 +163,7 @@ fn checkered_spheres() {
         c.with_initialized()
     };
 
-    if let Err(e) = camera.render(&world) {
+    if let Err(e) = camera.render(&world, "image.png") {
         eprintln!("Error: {e}");
     }
 }

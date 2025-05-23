@@ -1,13 +1,14 @@
-use crate::color::{Color, write_color};
+use crate::color::{Color, ColorU8};
 use crate::hittable::Hittable;
 use crate::interval::Interval;
 use crate::ray::Ray;
 use crate::rtweekend::degrees_to_radians;
 use crate::vec3::{Point, Vec3f64};
+use image::{ImageBuffer, RgbImage};
 use rayon::prelude::*;
 use std::io::{self, Write};
-use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::Arc;
 
 #[derive(Default)]
 pub struct Camera {
@@ -38,7 +39,7 @@ pub struct Camera {
 }
 
 impl Camera {
-    pub fn render(&self, world: &dyn Hittable) -> io::Result<()> {
+    pub fn render(&self, world: &dyn Hittable, output_path: &str) -> io::Result<()> {
         let width = self.image_width as usize;
         let height = self.image_height as usize;
         let samples = self.samples_per_pixel;
@@ -46,47 +47,53 @@ impl Camera {
         let scale = self.pixel_samples_scale;
 
         // Allocate a buffer for all pixels
-        let mut buffer = vec![Color::zero(); width * height];
+        let mut buffer = vec![0u8; width * height * 3];
 
-        // Shared progress counter
+        // 进度计数器
         let counter = Arc::new(AtomicUsize::new(0));
         let mut stderr = io::stderr();
 
-        // Parallel fill: split by rows (j)
+        // 按行并行渲染
         buffer
-            .par_chunks_mut(width)
+            .par_chunks_mut(width * 3)
             .enumerate()
-            .for_each(|(j, row)| {
+            .for_each(|(j, row3)| {
                 for i in 0..width {
-                    let mut col = Color::zero();
+                    let mut color = Color::zero();
                     for _ in 0..samples {
-                        let r = self.get_ray(i as u32, j as u32);
-                        col += self.ray_color(&r, max_depth, world);
+                        let r = self.get_ray(i, j);
+                        color += self.ray_color(&r, max_depth, world);
                     }
-                    row[i] = col * scale;
+                    color *= scale;
+
+                    // 把 [0,1] 浮点色值转换到 [0,255]
+                    let color: ColorU8 = color.into();
+                    {
+                        let i = i * 3;
+                        row3[i] = color[0];
+                        row3[i + 1] = color[1];
+                        row3[i + 2] = color[2];
+                    }
                 }
 
+                // 更新并输出进度
                 let prev = counter.fetch_add(1, Ordering::SeqCst);
                 if prev % 10 == 0 {
-                    let mut stderr = stderr.lock();
-                    write!(stderr, "\rScanlines remaining: {}    ", height - prev).ok();
-                    stderr.flush().ok();
+                    let mut err = stderr.lock();
+                    write!(err, "\rScanlines remaining: {}    ", height - prev).ok();
+                    err.flush().ok();
                 }
             });
+        writeln!(stderr, "\rFinish rendering.                 ")?;
 
         // Output
-        write!(stderr, "\rWriting to file...       ")?;
+        writeln!(stderr, "\rSaving image to {output_path} ...")?;
+        let img: RgbImage = ImageBuffer::from_raw(width as u32, height as u32, buffer)
+            .expect("from_raw failed: buffer size incorrect");
+        img.save(output_path)
+            .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
 
-        let mut stdout = io::stdout();
-        writeln!(stdout, "P3\n{} {} \n255\n", width, height)?;
-
-        for j in 0..height {
-            for i in 0..width {
-                write_color(&mut stdout, &buffer[j * width + i])?;
-            }
-        }
-
-        writeln!(stderr, "\rDone.                 ")?;
+        writeln!(stderr, "\rDone.")?;
         Ok(())
     }
 
@@ -141,7 +148,7 @@ impl Camera {
         self
     }
 
-    fn get_ray(&self, i: u32, j: u32) -> Ray {
+    fn get_ray(&self, i: usize, j: usize) -> Ray {
         // Construct a camera ray originating from the origin and directed at randomly sampled
         // point around the pixel location i, j.
 

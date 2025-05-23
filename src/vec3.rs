@@ -24,6 +24,12 @@ impl<T> Vec3<T> {
     }
 }
 
+impl<T> From<Vec3<T>> for [T; 3] {
+    fn from(value: Vec3<T>) -> Self {
+        value.0
+    }
+}
+
 impl Vec3f64 {
     pub fn all(e: f64) -> Self {
         Self::new(e, e, e)

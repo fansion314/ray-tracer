@@ -15,10 +15,6 @@ impl HittableList {
         self.bbox = AABB::from_aabbs(&self.bbox, object.bounding_box());
         self.objects.push(object);
     }
-
-    // pub fn clear(&mut self) {
-    //     self.objects.clear();
-    // }
 }
 
 impl Hittable for HittableList {
