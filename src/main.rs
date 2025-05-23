@@ -7,6 +7,7 @@ mod hittable_list;
 mod interval;
 mod material;
 mod perlin;
+mod quad;
 mod ray;
 mod rtweekend;
 mod rtwimage;
@@ -19,6 +20,7 @@ use crate::camera::Camera;
 use crate::color::Color;
 use crate::hittable_list::HittableList;
 use crate::material::{Dielectric, Lambertian, Metal};
+use crate::quad::Quad;
 use crate::sphere::Sphere;
 use crate::texture::{CheckerTexture, ImageTexture, NoiseTexture};
 use crate::vec3::{Point, Vec3f64};
@@ -236,12 +238,82 @@ fn perlin_spheres() {
     }
 }
 
+fn quads() {
+    let mut world = HittableList::default();
+
+    // Materials
+    let left_red = Arc::new(Lambertian::from(Color::new(1.0, 0.2, 0.2)));
+    let back_green = Arc::new(Lambertian::from(Color::new(0.2, 1.0, 0.2)));
+    let right_blue = Arc::new(Lambertian::from(Color::new(0.2, 0.2, 1.0)));
+    let upper_orange = Arc::new(Lambertian::from(Color::new(1.0, 0.5, 0.0)));
+    let lower_teal = Arc::new(Lambertian::from(Color::new(0.2, 0.8, 0.8)));
+
+    // Quads
+    world.add(Arc::new(Quad::new(
+        Point::new(-3.0, -2.0, 5.0),
+        Vec3f64::new(0.0, 0.0, -4.0),
+        Vec3f64::new(0.0, 4.0, 0.0),
+        left_red,
+    )));
+
+    world.add(Arc::new(Quad::new(
+        Point::new(-2.0, -2.0, 0.0),
+        Vec3f64::new(4.0, 0.0, 0.0),
+        Vec3f64::new(0.0, 4.0, 0.0),
+        back_green,
+    )));
+
+    world.add(Arc::new(Quad::new(
+        Point::new(3.0, -2.0, 1.0),
+        Vec3f64::new(0.0, 0.0, 4.0),
+        Vec3f64::new(0.0, 4.0, 0.0),
+        right_blue,
+    )));
+
+    world.add(Arc::new(Quad::new(
+        Point::new(-2.0, 3.0, 1.0),
+        Vec3f64::new(4.0, 0.0, 0.0),
+        Vec3f64::new(0.0, 0.0, 4.0),
+        upper_orange,
+    )));
+
+    world.add(Arc::new(Quad::new(
+        Point::new(-2.0, -3.0, 5.0),
+        Vec3f64::new(4.0, 0.0, 0.0),
+        Vec3f64::new(0.0, 0.0, -4.0),
+        lower_teal,
+    )));
+
+    let camera = {
+        let mut c = Camera::default();
+
+        c.aspect_ratio = 1.0;
+        c.image_width = 1000;
+        c.samples_per_pixel = 100;
+        c.max_depth = 50;
+
+        c.vfov = 80.0;
+        c.lookfrom = Point::new(0.0, 0.0, 9.0);
+        c.lookat = Point::new(0.0, 0.0, 0.0);
+        c.vup = Vec3f64::new(0.0, 1.0, 0.0);
+
+        c.defocus_angle = 0.0;
+
+        c.with_initialized()
+    };
+
+    if let Err(e) = camera.render(&world, "quads.png") {
+        eprintln!("Error: {e}");
+    }
+}
+
 fn main() {
-    match 4 {
+    match 5 {
         1 => bouncing_spheres(),
         2 => checkered_spheres(),
         3 => earth(),
         4 => perlin_spheres(),
+        5 => quads(),
         _ => {}
     }
 }

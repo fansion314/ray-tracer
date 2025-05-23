@@ -1,17 +1,11 @@
-use std::ops::Index;
-
 use crate::interval::{INTERVAL_EMPTY, INTERVAL_UNIVERSE};
 use crate::ray::Ray;
+use crate::vec3::Vec3;
 use crate::{interval::Interval, vec3::Point};
 
-#[derive(Default)]
-pub struct AABB([Interval; 3]);
+pub type AABB = Vec3<Interval>;
 
 impl AABB {
-    pub fn new(x: Interval, y: Interval, z: Interval) -> Self {
-        Self([x, y, z])
-    }
-
     pub fn from_points(a: &Point, b: &Point) -> Self {
         // Treat the two points a and b as extrema for the bounding box, so we don't require a
         // particular minimum/maximum coordinate order.
@@ -32,7 +26,7 @@ impl AABB {
             Interval::from(b[2], a[2])
         };
 
-        Self::new(x, y, z)
+        Self::new(x, y, z).pad_to_minimums()
     }
 
     pub fn from_aabbs(box0: &AABB, box1: &AABB) -> Self {
@@ -40,7 +34,20 @@ impl AABB {
             Interval::from_intervals(&box0[0], &box1[0]),
             Interval::from_intervals(&box0[1], &box1[1]),
             Interval::from_intervals(&box0[2], &box1[2]),
-        )
+        ).pad_to_minimums()
+    }
+
+    fn pad_to_minimums(mut self) -> Self {
+        // Adjust the AABB so that no side is narrower than some delta, padding if necessary.
+
+        let delta = 0.0001;
+        for i in 0..3 {
+            if self[i].size() < delta {
+                self[i] = self[i].into_expand(delta)
+            }
+        }
+
+        self
     }
 
     pub fn empty() -> Self {
@@ -102,13 +109,5 @@ impl AABB {
                 2
             }
         }
-    }
-}
-
-impl Index<usize> for AABB {
-    type Output = Interval;
-
-    fn index(&self, index: usize) -> &Self::Output {
-        &self.0[index]
     }
 }

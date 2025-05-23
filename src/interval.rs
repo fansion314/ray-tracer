@@ -4,14 +4,9 @@ pub struct Interval {
     pub max: f64,
 }
 
-pub const INTERVAL_EMPTY: Interval = Interval {
-    min: f64::INFINITY,
-    max: -f64::INFINITY,
-};
-pub const INTERVAL_UNIVERSE: Interval = Interval {
-    min: -f64::INFINITY,
-    max: f64::INFINITY,
-};
+pub const INTERVAL_EMPTY: Interval = Interval::from(f64::INFINITY, -f64::INFINITY);
+pub const INTERVAL_UNIVERSE: Interval = Interval::from(-f64::INFINITY, f64::INFINITY);
+pub const INTERVAL_01: Interval = Interval::from(0.0, 1.0);
 
 impl Interval {
     pub const fn new() -> Self {
@@ -29,6 +24,10 @@ impl Interval {
 
     pub fn size(&self) -> f64 {
         self.max - self.min
+    }
+
+    pub const fn contains(&self, x: f64) -> bool {
+        self.min <= x && x <= self.max
     }
 
     pub fn surrounds(&self, x: f64) -> bool {

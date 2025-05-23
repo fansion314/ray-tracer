@@ -4,7 +4,7 @@ use std::ops::{
 };
 
 #[derive(Default, Clone, PartialEq, Debug)]
-pub struct Vec3<T>([T; 3]);
+pub struct Vec3<T>(pub(crate) [T; 3]);
 pub type Vec3f64 = Vec3<f64>;
 pub type Point = Vec3f64;
 
