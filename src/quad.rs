@@ -10,9 +10,47 @@ pub enum Shape2D {
     Parallelogram,
     Triangle,
     Circle,
+    Ellipse,
+    Annulus { inner: f64 },
 }
 
-type Shape2DFn = fn(f64, f64) -> bool;
+type Shape2DFn = Box<dyn Fn(f64, f64) -> Option<(f64, f64)> + Send + Sync>;
+
+impl From<Shape2D> for Shape2DFn {
+    fn from(value: Shape2D) -> Self {
+        match value {
+            Shape2D::Parallelogram => Box::new(|a: f64, b: f64| {
+                if INTERVAL_01.contains(a) && INTERVAL_01.contains(b) {
+                    Some((a, b))
+                } else {
+                    None
+                }
+            }),
+            Shape2D::Triangle => Box::new(|a: f64, b: f64| {
+                if a > 0.0 && b > 0.0 && a + b < 1.0 {
+                    Some((a, b))
+                } else {
+                    None
+                }
+            }),
+            Shape2D::Circle | Shape2D::Ellipse => Box::new(|a: f64, b: f64| {
+                if a * a + b * b < 1.0 {
+                    Some((a / 2.0 + 0.5, b / 2.0 + 0.5))
+                } else {
+                    None
+                }
+            }),
+            Shape2D::Annulus { inner } => Box::new(move |a: f64, b: f64| {
+                let center_dist = (a * a + b * b).sqrt();
+                if inner < center_dist && center_dist < 1.0 {
+                    Some((a / 2.0 + 0.5, b / 2.0 + 0.5))
+                } else {
+                    None
+                }
+            }),
+        }
+    }
+}
 
 pub struct Quad {
     q: Point,
@@ -29,8 +67,23 @@ pub struct Quad {
 
 impl Quad {
     pub fn new(q: Point, u: Vec3f64, v: Vec3f64, mat: Arc<dyn Material>, shape: Shape2D) -> Self {
-        let bbox_diagonal1 = AABB::from_points(&q, &(&q + &u + &v));
-        let bbox_diagonal2 = AABB::from_points(&(&q + &u), &(&q + &v));
+        let bbox = {
+            let quv = &q + &u + &v;
+            let qu = &q + &u;
+            let qv = &q + &v;
+            match shape {
+                Shape2D::Parallelogram => {
+                    AABB::from_aabbs(&AABB::from_points(&q, &quv), &AABB::from_points(&qu, &qv))
+                }
+                Shape2D::Triangle => {
+                    AABB::from_aabbs(&AABB::from_points(&q, &qv), &AABB::from_points(&qu, &qv))
+                }
+                Shape2D::Circle | Shape2D::Ellipse | Shape2D::Annulus { .. } => {
+                    AABB::from_points(&quv, &(&q - &u - &v))
+                }
+            }
+        };
+
         let n = u.cross(&v);
         let w = n.clone() / n.dot(&n);
         let normal = u.cross(&v).into_unit_vector();
@@ -41,20 +94,10 @@ impl Quad {
             v,
             mat,
             w,
-            bbox: AABB::from_aabbs(&bbox_diagonal1, &bbox_diagonal2),
+            bbox,
             normal,
             d,
-            contains_fn: Self::shape2d_contains_fn(shape),
-        }
-    }
-
-    fn shape2d_contains_fn(shape: Shape2D) -> Shape2DFn {
-        match shape {
-            Shape2D::Parallelogram => {
-                |a: f64, b: f64| INTERVAL_01.contains(a) && INTERVAL_01.contains(b)
-            }
-            Shape2D::Triangle => |a: f64, b: f64| a > 0.0 && b > 0.0 && a + b < 1.0,
-            Shape2D::Circle => |a: f64, b: f64| a * a + b * b < 1.0,
+            contains_fn: shape.into(),
         }
     }
 }
@@ -80,9 +123,7 @@ impl Hittable for Quad {
         let alpha = self.w.dot(&planar_hitpt_vector.cross(&self.v));
         let beta = self.w.dot(&self.u.cross(&planar_hitpt_vector));
 
-        if !(self.contains_fn)(alpha, beta) {
-            return None;
-        }
+        let uv = (self.contains_fn)(alpha, beta)?;
 
         Some(HitRecord::new(
             r,
@@ -90,7 +131,7 @@ impl Hittable for Quad {
             intersection,
             self.normal.clone(),
             self.mat.clone(),
-            (alpha, beta),
+            uv,
         ))
     }
 

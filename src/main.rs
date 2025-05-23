@@ -242,10 +242,14 @@ fn quads() {
     let mut world = HittableList::default();
 
     // Materials
-    let left_red = Arc::new(Lambertian::from(Color::new(1.0, 0.2, 0.2)));
-    let back_green = Arc::new(Lambertian::from(Color::new(0.2, 1.0, 0.2)));
-    let right_blue = Arc::new(Lambertian::from(Color::new(0.2, 0.2, 1.0)));
-    let upper_orange = Arc::new(Lambertian::from(Color::new(1.0, 0.5, 0.0)));
+    let left_red = Arc::new(Lambertian::new(Arc::new(CheckerTexture::from(
+        0.5,
+        Color::new(1.0, 0.2, 0.2),
+        Color::one(),
+    ))));
+    let back_green = Arc::new(Metal::new(Color::new(0.7, 1.0, 0.7), 0.005));
+    let right_blue = Arc::new(Lambertian::new(Arc::new(NoiseTexture::new(0.5))));
+    let upper_orange = Arc::new(Lambertian::new(Arc::new(ImageTexture::new("earthmap.jpg"))));
     let lower_teal = Arc::new(Lambertian::from(Color::new(0.2, 0.8, 0.8)));
 
     // Quads
@@ -258,9 +262,9 @@ fn quads() {
     )));
 
     world.add(Arc::new(Quad::new(
-        Point::new(-2.0, -2.0, 0.0),
-        Vec3f64::new(4.0, 0.0, 0.0),
-        Vec3f64::new(0.0, 4.0, 0.0),
+        Point::new(-5.0, -5.0, 0.0),
+        Vec3f64::new(10.0, 0.0, 0.0),
+        Vec3f64::new(0.0, 10.0, 0.0),
         back_green,
         Shape2D::Triangle,
     )));
@@ -274,19 +278,19 @@ fn quads() {
     )));
 
     world.add(Arc::new(Quad::new(
-        Point::new(-2.0, 3.0, 1.0),
-        Vec3f64::new(4.0, 0.0, 0.0),
-        Vec3f64::new(0.0, 0.0, 4.0),
+        Point::new(0.0, 3.0, 4.0),
+        Vec3f64::new(2.0, 0.0, 0.0),
+        Vec3f64::new(0.0, 0.0, 6.0),
         upper_orange,
-        Shape2D::Triangle,
+        Shape2D::Ellipse,
     )));
 
     world.add(Arc::new(Quad::new(
-        Point::new(-2.0, -3.0, 5.0),
-        Vec3f64::new(4.0, 0.0, 0.0),
-        Vec3f64::new(0.0, 0.0, -4.0),
+        Point::new(0.0, -3.0, 3.0),
+        Vec3f64::new(2.0, 0.0, 0.0),
+        Vec3f64::new(0.0, 0.0, -2.0),
         lower_teal,
-        Shape2D::Parallelogram,
+        Shape2D::Annulus { inner: 0.5 },
     )));
 
     let camera = {
