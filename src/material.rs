@@ -2,11 +2,17 @@ use crate::color::Color;
 use crate::hittable::HitRecord;
 use crate::ray::Ray;
 use crate::texture::{SolidColor, Texture};
-use crate::vec3::Vec3f64;
+use crate::vec3::{Point, Vec3f64};
 use std::sync::Arc;
 
 pub trait Material: Send + Sync {
-    fn scatter(&self, r_in: &Ray, rec: &HitRecord) -> Option<(Ray, Color)>;
+    fn scatter(&self, _r_in: &Ray, _rec: &HitRecord) -> Option<(Ray, Color)> {
+        None
+    }
+
+    fn emitted(&self, _u: f64, _v: f64, _p: &Point) -> Color {
+        Color::zero()
+    }
 }
 
 pub struct Lambertian {
@@ -106,5 +112,25 @@ impl Material for Dielectric {
             Ray::with_time(rec.p.clone(), direction, r_in.time()),
             Color::one(),
         ))
+    }
+}
+
+pub struct DiffuseLight {
+    tex: Arc<dyn Texture>,
+}
+
+impl DiffuseLight {
+    pub fn new(tex: Arc<dyn Texture>) -> Self {
+        Self { tex }
+    }
+
+    pub fn from(emit: Color) -> Self {
+        Self::new(Arc::new(SolidColor::from(emit)))
+    }
+}
+
+impl Material for DiffuseLight {
+    fn emitted(&self, u: f64, v: f64, p: &Point) -> Color {
+        self.tex.value(u, v, p)
     }
 }

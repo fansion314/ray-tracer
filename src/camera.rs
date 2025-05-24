@@ -7,8 +7,8 @@ use crate::vec3::{Point, Vec3f64};
 use image::{ImageBuffer, RgbImage};
 use rayon::prelude::*;
 use std::io::{self, Write};
-use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicUsize, Ordering};
 
 #[derive(Default)]
 pub struct Camera {
@@ -16,6 +16,7 @@ pub struct Camera {
     pub aspect_ratio: f64,      // Ratio of image width over height
     pub samples_per_pixel: i32, // Count of random samples for each pixel
     pub max_depth: i32,         // Maximum number of ray bounces into scene
+    pub background: Color,      // Scene background color
 
     pub vfov: f64,       // Vertical view angle (field of view)
     pub lookfrom: Point, // Point camera is looking from
@@ -157,7 +158,7 @@ impl Camera {
             + &self.pixel_delta_u * (i as f64 + offset.x())
             + &self.pixel_delta_v * (j as f64 + offset.y());
 
-        let ray_origin = if self.defocus_angle <= 0.0 {
+        let ray_origin = if self.defocus_angle < 1e-3 {
             self.center.clone()
         } else {
             self.defocus_disk_sample()
@@ -190,15 +191,15 @@ impl Camera {
         }
 
         if let Some(rec) = world.hit(r, Interval::from(0.001, f64::INFINITY)) {
+            let color_from_emission = rec.mat.emitted(rec.u, rec.v, &rec.p);
             if let Some((scattered, attenuation)) = rec.mat.scatter(r, &rec) {
-                attenuation * self.ray_color(&scattered, depth - 1, world)
+                let color_from_scatter = attenuation * self.ray_color(&scattered, depth - 1, world);
+                color_from_emission + color_from_scatter
             } else {
-                Color::zero()
+                color_from_emission
             }
         } else {
-            let unit_direction = r.direction().unit_vector();
-            let a = 0.5 * (unit_direction.y() + 1.0);
-            Color::one() * (1.0 - a) + Color::new(0.5, 0.7, 1.0) * a
+            self.background.clone()
         }
     }
 }

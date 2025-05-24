@@ -19,7 +19,7 @@ use crate::bvh::BVHNode;
 use crate::camera::Camera;
 use crate::color::Color;
 use crate::hittable_list::HittableList;
-use crate::material::{Dielectric, Lambertian, Metal};
+use crate::material::{Dielectric, DiffuseLight, Lambertian, Metal};
 use crate::quad::{Quad, Shape2D};
 use crate::sphere::Sphere;
 use crate::texture::{CheckerTexture, ImageTexture, NoiseTexture};
@@ -112,6 +112,7 @@ fn bouncing_spheres() {
         c.image_width = 1000;
         c.samples_per_pixel = 100;
         c.max_depth = 50;
+        c.background = Color::new(0.70, 0.80, 1.00);
 
         c.vfov = 20.0;
         c.lookfrom = Point::new(13.0, 2.0, 3.0);
@@ -149,6 +150,8 @@ fn checkered_spheres() {
         Arc::new(Lambertian::new(checker)),
     )));
 
+    let world = BVHNode::from(&mut world);
+
     let camera = {
         let mut c = Camera::default();
 
@@ -156,6 +159,7 @@ fn checkered_spheres() {
         c.image_width = 800;
         c.samples_per_pixel = 100;
         c.max_depth = 50;
+        c.background = Color::new(0.70, 0.80, 1.00);
 
         c.vfov = 20.0;
         c.lookfrom = Point::new(13.0, 2.0, 3.0);
@@ -184,6 +188,7 @@ fn earth() {
         c.image_width = 1000;
         c.samples_per_pixel = 100;
         c.max_depth = 50;
+        c.background = Color::new(0.70, 0.80, 1.00);
 
         c.vfov = 20.0;
         c.lookfrom = Point::new(0.0, 0.0, 12.0);
@@ -215,6 +220,8 @@ fn perlin_spheres() {
         Arc::new(Lambertian::new(pertext)),
     )));
 
+    let world = BVHNode::from(&mut world);
+
     let camera = {
         let mut c = Camera::default();
 
@@ -222,6 +229,7 @@ fn perlin_spheres() {
         c.image_width = 1000;
         c.samples_per_pixel = 100;
         c.max_depth = 50;
+        c.background = Color::new(0.70, 0.80, 1.00);
 
         c.vfov = 20.0;
         c.lookfrom = Point::new(13.0, 2.0, 3.0);
@@ -293,6 +301,8 @@ fn quads() {
         Shape2D::Annulus { inner: 0.5 },
     )));
 
+    let world = BVHNode::from(&mut world);
+
     let camera = {
         let mut c = Camera::default();
 
@@ -300,6 +310,7 @@ fn quads() {
         c.image_width = 1000;
         c.samples_per_pixel = 100;
         c.max_depth = 50;
+        c.background = Color::new(0.70, 0.80, 1.00);
 
         c.vfov = 80.0;
         c.lookfrom = Point::new(0.0, 0.0, 9.0);
@@ -316,13 +327,147 @@ fn quads() {
     }
 }
 
+fn simple_light() {
+    let mut world = HittableList::default();
+
+    let pertext = Arc::new(NoiseTexture::new(4.0));
+    world.add(Arc::new(Sphere::new(
+        Point::new(0.0, -1000.0, 0.0),
+        1000.0,
+        Arc::new(Lambertian::new(pertext.clone())),
+    )));
+    world.add(Arc::new(Sphere::new(
+        Point::new(0.0, 2.0, 0.0),
+        2.0,
+        Arc::new(Lambertian::new(pertext)),
+    )));
+
+    let difflight = Arc::new(DiffuseLight::from(Color::all(4.0)));
+    world.add(Arc::new(Sphere::new(
+        Point::new(0.0, 7.0, 0.0),
+        2.0,
+        difflight.clone(),
+    )));
+    world.add(Arc::new(Quad::new(
+        Point::new(3.0, 1.0, -2.0),
+        Vec3f64::new(2.0, 0.0, 0.0),
+        Vec3f64::new(0.0, 2.0, 0.0),
+        difflight,
+        Shape2D::Parallelogram,
+    )));
+
+    let world = BVHNode::from(&mut world);
+
+    let camera = {
+        let mut c = Camera::default();
+
+        c.aspect_ratio = 16.0 / 9.0;
+        c.image_width = 1600;
+        c.samples_per_pixel = 100;
+        c.max_depth = 50;
+        c.background = Color::zero();
+
+        c.vfov = 20.0;
+        c.lookfrom = Point::new(26.0, 3.0, 6.0);
+        c.lookat = Point::new(0.0, 2.0, 0.0);
+        c.vup = Vec3f64::new(0.0, 1.0, 0.0);
+
+        c.defocus_angle = 0.0;
+
+        c.with_initialized()
+    };
+
+    if let Err(e) = camera.render(&world, "light.png") {
+        eprintln!("Error: {e}");
+    }
+}
+
+fn cornell_box() {
+    let mut world = HittableList::default();
+
+    let red = Arc::new(Lambertian::from(Color::new(0.65, 0.05, 0.05)));
+    let white = Arc::new(Lambertian::from(Color::new(0.73, 0.73, 0.73)));
+    let green = Arc::new(Lambertian::from(Color::new(0.12, 0.45, 0.15)));
+    let light = Arc::new(DiffuseLight::from(Color::new(15.0, 15.0, 15.0)));
+
+    world.add(Arc::new(Quad::new(
+        Point::new(555.0, 0.0, 0.0),
+        Vec3f64::new(0.0, 555.0, 0.0),
+        Vec3f64::new(0.0, 0.0, 555.0),
+        green,
+        Shape2D::Parallelogram,
+    )));
+    world.add(Arc::new(Quad::new(
+        Point::new(0.0, 0.0, 0.0),
+        Vec3f64::new(0.0, 555.0, 0.0),
+        Vec3f64::new(0.0, 0.0, 555.0),
+        red,
+        Shape2D::Parallelogram,
+    )));
+    world.add(Arc::new(Quad::new(
+        Point::new(343.0, 554.0, 332.0),
+        Vec3f64::new(-130.0, 0.0, 0.0),
+        Vec3f64::new(0.0, 0.0, -105.0),
+        light,
+        Shape2D::Parallelogram,
+    )));
+    world.add(Arc::new(Quad::new(
+        Point::new(0.0, 0.0, 0.0),
+        Vec3f64::new(555.0, 0.0, 0.0),
+        Vec3f64::new(0.0, 0.0, 555.0),
+        white.clone(),
+        Shape2D::Parallelogram,
+    )));
+    world.add(Arc::new(Quad::new(
+        Point::new(555.0, 555.0, 555.0),
+        Vec3f64::new(-555.0, 0.0, 0.0),
+        Vec3f64::new(0.0, 0.0, -555.0),
+        white.clone(),
+        Shape2D::Parallelogram,
+    )));
+    world.add(Arc::new(Quad::new(
+        Point::new(0.0, 0.0, 555.0),
+        Vec3f64::new(555.0, 0.0, 0.0),
+        Vec3f64::new(0.0, 555.0, 0.0),
+        white,
+        Shape2D::Parallelogram,
+    )));
+
+    let world = BVHNode::from(&mut world);
+
+    let camera = {
+        let mut c = Camera::default();
+
+        c.aspect_ratio = 1.0;
+        c.image_width = 1000;
+        c.samples_per_pixel = 300;
+        c.max_depth = 50;
+        c.background = Color::zero();
+
+        c.vfov = 40.0;
+        c.lookfrom = Point::new(278.0, 278.0, -800.0);
+        c.lookat = Point::new(278.0, 278.0, 0.0);
+        c.vup = Vec3f64::new(0.0, 1.0, 0.0);
+
+        c.defocus_angle = 0.0;
+
+        c.with_initialized()
+    };
+
+    if let Err(e) = camera.render(&world, "cornell_box.png") {
+        eprintln!("Error: {e}");
+    }
+}
+
 fn main() {
-    match 5 {
+    match 7 {
         1 => bouncing_spheres(),
         2 => checkered_spheres(),
         3 => earth(),
         4 => perlin_spheres(),
         5 => quads(),
+        6 => simple_light(),
+        7 => cornell_box(),
         _ => {}
     }
 }
