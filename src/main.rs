@@ -2,6 +2,7 @@ mod aabb;
 mod bvh;
 mod camera;
 mod color;
+mod constant_medium;
 mod hittable;
 mod hittable_list;
 mod interval;
@@ -18,6 +19,7 @@ mod vec3;
 use crate::bvh::BVHNode;
 use crate::camera::Camera;
 use crate::color::Color;
+use crate::constant_medium::ConstantMedium;
 use crate::hittable::{Hittable, RotateY, Translate};
 use crate::hittable_list::HittableList;
 use crate::material::{Dielectric, DiffuseLight, Lambertian, Metal};
@@ -68,7 +70,7 @@ fn bouncing_spheres() {
                     )));
                 } else if choose_mat < 0.95 {
                     // metal
-                    let albedo = Color::random_range(0.5, 1.0);
+                    let albedo = Color::random_range(0.5..1.0);
                     let fuzz = random_range(0.0..0.5);
                     let sphere_material = Arc::new(Metal::new(albedo, fuzz));
                     world.add(Arc::new(Sphere::new(center, 0.2, sphere_material)));
@@ -102,7 +104,7 @@ fn bouncing_spheres() {
         material3,
     )));
 
-    let world = BVHNode::from(&mut world);
+    let world = BVHNode::from(world);
 
     // Camera
 
@@ -151,7 +153,7 @@ fn checkered_spheres() {
         Arc::new(Lambertian::new(checker)),
     )));
 
-    let world = BVHNode::from(&mut world);
+    let world = BVHNode::from(world);
 
     let camera = {
         let mut c = Camera::default();
@@ -221,7 +223,7 @@ fn perlin_spheres() {
         Arc::new(Lambertian::new(pertext)),
     )));
 
-    let world = BVHNode::from(&mut world);
+    let world = BVHNode::from(world);
 
     let camera = {
         let mut c = Camera::default();
@@ -302,7 +304,7 @@ fn quads() {
         Shape2D::Annulus { inner: 0.5 },
     )));
 
-    let world = BVHNode::from(&mut world);
+    let world = BVHNode::from(world);
 
     let camera = {
         let mut c = Camera::default();
@@ -357,7 +359,7 @@ fn simple_light() {
         Shape2D::Parallelogram,
     )));
 
-    let world = BVHNode::from(&mut world);
+    let world = BVHNode::from(world);
 
     let camera = {
         let mut c = Camera::default();
@@ -429,31 +431,27 @@ fn cornell_box() {
     )));
 
     {
-        let mut box1 = HittableList::default();
-        box1.append(Quad::new_box(
+        let mut b: Arc<dyn Hittable> = Arc::new(BVHNode::from(Quad::new_box(
             &Point::new(0.0, 0.0, 0.0),
             &Point::new(165.0, 330.0, 165.0),
             white.clone(),
-        ));
-        let mut box1: Arc<dyn Hittable> = Arc::new(BVHNode::from(&mut box1));
-        box1= Arc::new(RotateY::new(box1, 15.0));
-        box1 = Arc::new(Translate::new(box1, Vec3f64::new(265.0, 0.0, 295.0)));
-        world.add(box1);
+        )));
+        b = Arc::new(RotateY::new(b, 15.0));
+        b = Arc::new(Translate::new(b, Vec3f64::new(265.0, 0.0, 295.0)));
+        world.add(b);
     }
     {
-        let mut box1 = HittableList::default();
-        box1.append(Quad::new_box(
+        let mut b: Arc<dyn Hittable> = Arc::new(BVHNode::from(Quad::new_box(
             &Point::new(0.0, 0.0, 0.0),
             &Point::new(165.0, 165.0, 165.0),
             white.clone(),
-        ));
-        let mut box1: Arc<dyn Hittable> = Arc::new(BVHNode::from(&mut box1));
-        box1 = Arc::new(RotateY::new(box1, -18.0));
-        box1 = Arc::new(Translate::new(box1, Vec3f64::new(130.0, 0.0, 65.0)));
-        world.add(box1);
+        )));
+        b = Arc::new(RotateY::new(b, -18.0));
+        b = Arc::new(Translate::new(b, Vec3f64::new(130.0, 0.0, 65.0)));
+        world.add(b);
     }
 
-    let world = BVHNode::from(&mut world);
+    let world = BVHNode::from(world);
 
     let camera = {
         let mut c = Camera::default();
@@ -479,8 +477,230 @@ fn cornell_box() {
     }
 }
 
+fn cornell_smoke() {
+    let mut world = HittableList::default();
+
+    let red = Arc::new(Lambertian::from(Color::new(0.65, 0.05, 0.05)));
+    let white = Arc::new(Lambertian::from(Color::new(0.73, 0.73, 0.73)));
+    let green = Arc::new(Lambertian::from(Color::new(0.12, 0.45, 0.15)));
+    let light = Arc::new(DiffuseLight::from(Color::new(7.0, 7.0, 7.0)));
+
+    world.add(Arc::new(Quad::new(
+        Point::new(555.0, 0.0, 0.0),
+        Vec3f64::new(0.0, 555.0, 0.0),
+        Vec3f64::new(0.0, 0.0, 555.0),
+        green,
+    )));
+    world.add(Arc::new(Quad::new(
+        Point::new(0.0, 0.0, 0.0),
+        Vec3f64::new(0.0, 555.0, 0.0),
+        Vec3f64::new(0.0, 0.0, 555.0),
+        red,
+    )));
+    world.add(Arc::new(Quad::new(
+        Point::new(113.0, 554.0, 127.0),
+        Vec3f64::new(330.0, 0.0, 0.0),
+        Vec3f64::new(0.0, 0.0, 305.0),
+        light,
+    )));
+    world.add(Arc::new(Quad::new(
+        Point::new(0.0, 555.0, 0.0),
+        Vec3f64::new(555.0, 0.0, 0.0),
+        Vec3f64::new(0.0, 0.0, 555.0),
+        white.clone(),
+    )));
+    world.add(Arc::new(Quad::new(
+        Point::new(0.0, 0.0, 0.0),
+        Vec3f64::new(555.0, 0.0, 0.0),
+        Vec3f64::new(0.0, 0.0, 555.0),
+        white.clone(),
+    )));
+    world.add(Arc::new(Quad::new(
+        Point::new(0.0, 0.0, 555.0),
+        Vec3f64::new(555.0, 0.0, 0.0),
+        Vec3f64::new(0.0, 555.0, 0.0),
+        white.clone(),
+    )));
+
+    let box1 = {
+        let b = Arc::new(BVHNode::from(Quad::new_box(
+            &Point::new(0.0, 0.0, 0.0),
+            &Point::new(165.0, 330.0, 165.0),
+            white.clone(),
+        )));
+        let b = Arc::new(RotateY::new(b, 15.0));
+        Arc::new(Translate::new(b, Vec3f64::new(265.0, 0.0, 295.0)))
+    };
+
+    let box2 = {
+        let b = Arc::new(BVHNode::from(Quad::new_box(
+            &Point::new(0.0, 0.0, 0.0),
+            &Point::new(165.0, 165.0, 165.0),
+            white.clone(),
+        )));
+        let b = Arc::new(RotateY::new(b, -18.0));
+        Arc::new(Translate::new(b, Vec3f64::new(130.0, 0.0, 65.0)))
+    };
+
+    world.add(Arc::new(ConstantMedium::from(box1, 0.01, Color::zero())));
+    world.add(Arc::new(ConstantMedium::from(box2, 0.01, Color::all(1.0))));
+
+    let world = BVHNode::from(world);
+
+    let camera = {
+        let mut c = Camera::default();
+
+        c.aspect_ratio = 1.0;
+        c.image_width = 600;
+        c.samples_per_pixel = 200;
+        c.max_depth = 50;
+        c.background = Color::zero();
+
+        c.vfov = 40.0;
+        c.lookfrom = Point::new(278.0, 278.0, -800.0);
+        c.lookat = Point::new(278.0, 278.0, 0.0);
+        c.vup = Vec3f64::new(0.0, 1.0, 0.0);
+
+        c.defocus_angle = 0.0;
+
+        c.with_initialized()
+    };
+
+    if let Err(e) = camera.render(&world, "cornell_smoke.png") {
+        eprintln!("Error: {e}");
+    }
+}
+
+pub fn final_scene(image_width: i32, samples_per_pixel: i32, max_depth: i32) {
+    let mut world = HittableList::default();
+
+    let ground = Arc::new(Lambertian::from(Color::new(0.48, 0.83, 0.53)));
+    let boxes_per_side = 20;
+    let mut boxes1: Vec<Arc<dyn Hittable>> =
+        Vec::with_capacity((boxes_per_side * boxes_per_side) as usize);
+    for i in 0..boxes_per_side {
+        for j in 0..boxes_per_side {
+            let w = 100.0;
+            let x0 = -1000.0 + i as f64 * w;
+            let z0 = -1000.0 + j as f64 * w;
+            let y0 = 0.0;
+            let x1 = x0 + w;
+            let y1 = random_range(1.0..101.0);
+            let z1 = z0 + w;
+
+            boxes1.extend(Quad::new_box(
+                &Point::new(x0, y0, z0),
+                &Point::new(x1, y1, z1),
+                ground.clone(),
+            ))
+        }
+    }
+    let bvh1 = Arc::new(BVHNode::from(boxes1));
+    world.add(bvh1);
+
+    let light = Arc::new(DiffuseLight::from(Color::all(7.0)));
+    world.add(Arc::new(Quad::new(
+        Point::new(123.0, 554.0, 147.0),
+        Vec3f64::new(300.0, 0.0, 0.0),
+        Vec3f64::new(0.0, 0.0, 265.0),
+        light,
+    )));
+
+    let center1 = Point::new(400.0, 400.0, 200.0);
+    let center2 = &center1 + Vec3f64::new(30.0, 0.0, 0.0);
+    let sphere_material = Arc::new(Lambertian::from(Color::new(0.7, 0.3, 0.1)));
+    world.add(Arc::new(Sphere::new_moving(
+        center1,
+        center2,
+        50.0,
+        sphere_material,
+    )));
+
+    world.add(Arc::new(Sphere::new(
+        Point::new(260.0, 150.0, 45.0),
+        50.0,
+        Arc::new(Dielectric::new(1.5)),
+    )));
+    world.add(Arc::new(Sphere::new(
+        Point::new(0.0, 150.0, 145.0),
+        50.0,
+        Arc::new(Metal::new(Color::new(0.8, 0.8, 0.9), 1.0)),
+    )));
+
+    let boundary = Arc::new(Sphere::new(
+        Point::new(360.0, 150.0, 145.0),
+        70.0,
+        Arc::new(Dielectric::new(1.5)),
+    ));
+    world.add(boundary.clone());
+    world.add(Arc::new(ConstantMedium::from(
+        boundary,
+        0.2,
+        Color::new(0.2, 0.4, 0.9),
+    )));
+
+    let boundary = Arc::new(Sphere::new(
+        Point::new(0.0, 0.0, 0.0),
+        5000.0,
+        Arc::new(Dielectric::new(1.5)),
+    ));
+    world.add(Arc::new(ConstantMedium::from(
+        boundary,
+        0.0001,
+        Color::one(),
+    )));
+
+    let emat = Arc::new(Lambertian::new(Arc::new(ImageTexture::new("earthmap.jpg"))));
+    world.add(Arc::new(Sphere::new(
+        Point::new(400.0, 200.0, 400.0),
+        100.0,
+        emat,
+    )));
+
+    let pertext = Arc::new(NoiseTexture::new(0.2));
+    world.add(Arc::new(Sphere::new(
+        Point::new(220.0, 280.0, 300.0),
+        80.0,
+        Arc::new(Lambertian::new(pertext)),
+    )));
+
+    let white = Arc::new(Lambertian::from(Color::all(0.73)));
+    let ns = 1000;
+    let mut boxes2: Vec<Arc<dyn Hittable>> = Vec::with_capacity(ns as usize);
+    for _ in 0..ns {
+        let rand_point = Point::random_range(0.0..165.0);
+        boxes2.push(Arc::new(Sphere::new(rand_point, 10.0, white.clone())));
+    }
+
+    let bvh2 = Arc::new(BVHNode::from(boxes2));
+    let rotated = Arc::new(RotateY::new(bvh2, 15.0));
+    let translated = Arc::new(Translate::new(rotated, Vec3f64::new(-100.0, 270.0, 395.0)));
+    world.add(translated);
+
+    let world = BVHNode::from(world);
+
+    let camera = {
+        let mut c = Camera::default();
+        c.aspect_ratio = 1.0;
+        c.image_width = image_width;
+        c.samples_per_pixel = samples_per_pixel;
+        c.max_depth = max_depth;
+        c.background = Color::zero();
+        c.vfov = 40.0;
+        c.lookfrom = Point::new(478.0, 278.0, -600.0);
+        c.lookat = Point::new(278.0, 278.0, 0.0);
+        c.vup = Vec3f64::new(0.0, 1.0, 0.0);
+        c.defocus_angle = 0.0;
+        c.with_initialized()
+    };
+
+    if let Err(e) = camera.render(&BVHNode::from(world), "final_scene.png") {
+        eprintln!("Error: {e}");
+    }
+}
+
 fn main() {
-    match 7 {
+    match 0 {
         1 => bouncing_spheres(),
         2 => checkered_spheres(),
         3 => earth(),
@@ -488,6 +708,8 @@ fn main() {
         5 => quads(),
         6 => simple_light(),
         7 => cornell_box(),
-        _ => {}
-    }
+        8 => cornell_smoke(),
+        9 => final_scene(800, 10000, 40),
+        _ => final_scene(400, 250, 4),
+    };
 }

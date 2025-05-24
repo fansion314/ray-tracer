@@ -53,10 +53,6 @@ impl BVHNode {
         Self { left, right, bbox }
     }
 
-    pub fn from(list: &mut HittableList) -> Self {
-        Self::new(list.objects.as_mut_slice())
-    }
-
     fn box_compare(a: &dyn Hittable, b: &dyn Hittable, axis_index: usize) -> std::cmp::Ordering {
         a.bounding_box()[axis_index]
             .min
@@ -96,5 +92,17 @@ impl Hittable for BVHNode {
 
     fn bounding_box(&self) -> &AABB {
         &self.bbox
+    }
+}
+
+impl From<HittableList> for BVHNode {
+    fn from(mut value: HittableList) -> Self {
+        Self::new(value.objects.as_mut_slice())
+    }
+}
+
+impl From<Vec<Arc<dyn Hittable>>> for BVHNode {
+    fn from(mut value: Vec<Arc<dyn Hittable>>) -> Self {
+        Self::new(value.as_mut_slice())
     }
 }

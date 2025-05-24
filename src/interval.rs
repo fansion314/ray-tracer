@@ -1,4 +1,4 @@
-use std::ops::Add;
+use std::ops::{Add, Range};
 
 #[derive(Copy, Clone, Debug)]
 pub struct Interval {
@@ -6,13 +6,13 @@ pub struct Interval {
     pub max: f64,
 }
 
-pub const INTERVAL_EMPTY: Interval = Interval::from(f64::INFINITY, -f64::INFINITY);
-pub const INTERVAL_UNIVERSE: Interval = Interval::from(-f64::INFINITY, f64::INFINITY);
-pub const INTERVAL_01: Interval = Interval::from(0.0, 1.0);
-
 impl Interval {
+    pub const EMPTY: Interval = Interval::from(f64::INFINITY, -f64::INFINITY);
+    pub const UNIVERSE: Interval = Interval::from(-f64::INFINITY, f64::INFINITY);
+    pub const I01: Interval = Interval::from(0.0, 1.0);
+
     pub const fn new() -> Self {
-        INTERVAL_EMPTY
+        Self::EMPTY
     }
 
     pub const fn from(min: f64, max: f64) -> Self {
@@ -65,5 +65,11 @@ impl Add<f64> for &Interval {
 
     fn add(self, rhs: f64) -> Self::Output {
         Interval::from(self.min + rhs, self.max + rhs)
+    }
+}
+
+impl From<Range<f64>> for Interval {
+    fn from(value: Range<f64>) -> Self {
+        Self::from(value.start, value.end)
     }
 }

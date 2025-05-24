@@ -1,6 +1,6 @@
 use crate::aabb::AABB;
 use crate::hittable::{HitRecord, Hittable};
-use crate::interval::{INTERVAL_01, Interval};
+use crate::interval::Interval;
 use crate::material::Material;
 use crate::ray::Ray;
 use crate::vec3::{Point, Vec3f64};
@@ -20,7 +20,7 @@ impl From<Shape2D> for Shape2DFn {
     fn from(value: Shape2D) -> Self {
         match value {
             Shape2D::Parallelogram => Box::new(|a: f64, b: f64| {
-                if INTERVAL_01.contains(a) && INTERVAL_01.contains(b) {
+                if Interval::I01.contains(a) && Interval::I01.contains(b) {
                     Some((a, b))
                 } else {
                     None

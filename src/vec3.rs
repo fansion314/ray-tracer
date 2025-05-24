@@ -1,6 +1,6 @@
 use std::fmt::{Debug, Display, Formatter};
 use std::ops::{
-    Add, AddAssign, Div, DivAssign, Index, IndexMut, Mul, MulAssign, Neg, Sub, SubAssign,
+    Add, AddAssign, Div, DivAssign, Index, IndexMut, Mul, MulAssign, Neg, Range, Sub, SubAssign,
 };
 
 #[derive(Default, Clone, PartialEq, Debug)]
@@ -44,14 +44,14 @@ impl Vec3f64 {
     }
 
     pub fn random() -> Self {
-        Self::random_range(0.0, 1.0)
+        Self::random_range(0.0..1.0)
     }
 
-    pub fn random_range(min: f64, max: f64) -> Self {
+    pub fn random_range(range: Range<f64>) -> Self {
         Self::new(
-            rand::random_range(min..max),
-            rand::random_range(min..max),
-            rand::random_range(min..max),
+            rand::random_range(range.clone()),
+            rand::random_range(range.clone()),
+            rand::random_range(range),
         )
     }
 
@@ -92,7 +92,7 @@ impl Vec3f64 {
 
     pub fn random_unit_vector() -> Self {
         loop {
-            let p = Self::random_range(-1.0, 1.0);
+            let p = Self::random_range(-1.0..1.0);
             let lensq = p.length_squared();
             if 1e-160 < lensq && lensq <= 1.0 {
                 // 如果不加 lensq <= 1.0 效果会不同

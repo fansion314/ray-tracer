@@ -1,4 +1,3 @@
-use crate::interval::{INTERVAL_EMPTY, INTERVAL_UNIVERSE};
 use crate::ray::Ray;
 use crate::vec3::{Vec3, Vec3f64};
 use crate::{interval::Interval, vec3::Point};
@@ -11,21 +10,9 @@ impl AABB {
         // Treat the two points a and b as extrema for the bounding box, so we don't require a
         // particular minimum/maximum coordinate order.
 
-        let x = if a[0] <= b[0] {
-            Interval::from(a[0], b[0])
-        } else {
-            Interval::from(b[0], a[0])
-        };
-        let y = if a[1] <= b[1] {
-            Interval::from(a[1], b[1])
-        } else {
-            Interval::from(b[1], a[1])
-        };
-        let z = if a[2] <= b[2] {
-            Interval::from(a[2], b[2])
-        } else {
-            Interval::from(b[2], a[2])
-        };
+        let x = if a[0] <= b[0] { a[0]..b[0] } else { b[0]..a[0] }.into();
+        let y = if a[1] <= b[1] { a[1]..b[1] } else { b[1]..a[1] }.into();
+        let z = if a[2] <= b[2] { a[2]..b[2] } else { b[2]..a[2] }.into();
 
         Self::new(x, y, z).pad_to_minimums()
     }
@@ -53,11 +40,11 @@ impl AABB {
     }
 
     pub fn empty() -> Self {
-        Self::new(INTERVAL_EMPTY, INTERVAL_EMPTY, INTERVAL_EMPTY)
+        Self::new(Interval::EMPTY, Interval::EMPTY, Interval::EMPTY)
     }
 
     pub fn universe() -> Self {
-        Self::new(INTERVAL_UNIVERSE, INTERVAL_UNIVERSE, INTERVAL_UNIVERSE)
+        Self::new(Interval::UNIVERSE, Interval::UNIVERSE, Interval::UNIVERSE)
     }
 
     pub fn hit(&self, r: &Ray, mut ray_t: Interval) -> bool {

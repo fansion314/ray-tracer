@@ -24,10 +24,9 @@ impl From<Color> for ColorU8 {
         b = linear_to_gamma(b);
 
         // Translate the [0,1] component values to the byte range [0,255].
-        static INTENSITY: Interval = Interval::from(0.000, 0.999);
-        let rbyte = (256.0 * INTENSITY.clamp(r)) as u8;
-        let gbyte = (256.0 * INTENSITY.clamp(g)) as u8;
-        let bbyte = (256.0 * INTENSITY.clamp(b)) as u8;
+        let rbyte = (255.999 * Interval::I01.clamp(r)) as u8;
+        let gbyte = (255.999 * Interval::I01.clamp(g)) as u8;
+        let bbyte = (255.999 * Interval::I01.clamp(b)) as u8;
 
         Vec3::new(rbyte, gbyte, bbyte)
     }

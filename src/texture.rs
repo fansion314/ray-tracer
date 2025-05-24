@@ -1,5 +1,5 @@
 use crate::color::Color;
-use crate::interval::INTERVAL_01;
+use crate::interval::Interval;
 use crate::perlin::Perlin;
 use crate::rtwimage::RtwImage;
 use crate::vec3::Point;
@@ -83,8 +83,8 @@ impl Texture for ImageTexture {
         }
 
         // Clamp input texture coordinates to [0,1] x [1,0]
-        u = INTERVAL_01.clamp(u);
-        v = 1.0 - INTERVAL_01.clamp(v); // Flip V to image coordinates
+        u = Interval::I01.clamp(u);
+        v = 1.0 - Interval::I01.clamp(v); // Flip V to image coordinates
 
         let pixel = self.image.pixel_data(
             (u * self.image.width() as f64) as u32,
