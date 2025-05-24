@@ -18,6 +18,7 @@ mod vec3;
 use crate::bvh::BVHNode;
 use crate::camera::Camera;
 use crate::color::Color;
+use crate::hittable::{Hittable, RotateY, Translate};
 use crate::hittable_list::HittableList;
 use crate::material::{Dielectric, DiffuseLight, Lambertian, Metal};
 use crate::quad::{Quad, Shape2D};
@@ -261,7 +262,7 @@ fn quads() {
     let lower_teal = Arc::new(Lambertian::from(Color::new(0.2, 0.8, 0.8)));
 
     // Quads
-    world.add(Arc::new(Quad::new(
+    world.add(Arc::new(Quad::with_shape(
         Point::new(-3.0, -2.0, 5.0),
         Vec3f64::new(0.0, 0.0, -4.0),
         Vec3f64::new(0.0, 4.0, 0.0),
@@ -269,7 +270,7 @@ fn quads() {
         Shape2D::Parallelogram,
     )));
 
-    world.add(Arc::new(Quad::new(
+    world.add(Arc::new(Quad::with_shape(
         Point::new(-5.0, -5.0, 0.0),
         Vec3f64::new(10.0, 0.0, 0.0),
         Vec3f64::new(0.0, 10.0, 0.0),
@@ -277,7 +278,7 @@ fn quads() {
         Shape2D::Triangle,
     )));
 
-    world.add(Arc::new(Quad::new(
+    world.add(Arc::new(Quad::with_shape(
         Point::new(3.0, 0.0, 3.0),
         Vec3f64::new(0.0, 0.0, 2.0),
         Vec3f64::new(0.0, 2.0, 0.0),
@@ -285,7 +286,7 @@ fn quads() {
         Shape2D::Circle,
     )));
 
-    world.add(Arc::new(Quad::new(
+    world.add(Arc::new(Quad::with_shape(
         Point::new(0.0, 3.0, 4.0),
         Vec3f64::new(2.0, 0.0, 0.0),
         Vec3f64::new(0.0, 0.0, 6.0),
@@ -293,7 +294,7 @@ fn quads() {
         Shape2D::Ellipse,
     )));
 
-    world.add(Arc::new(Quad::new(
+    world.add(Arc::new(Quad::with_shape(
         Point::new(0.0, -3.0, 3.0),
         Vec3f64::new(2.0, 0.0, 0.0),
         Vec3f64::new(0.0, 0.0, -2.0),
@@ -348,7 +349,7 @@ fn simple_light() {
         2.0,
         difflight.clone(),
     )));
-    world.add(Arc::new(Quad::new(
+    world.add(Arc::new(Quad::with_shape(
         Point::new(3.0, 1.0, -2.0),
         Vec3f64::new(2.0, 0.0, 0.0),
         Vec3f64::new(0.0, 2.0, 0.0),
@@ -395,43 +396,62 @@ fn cornell_box() {
         Vec3f64::new(0.0, 555.0, 0.0),
         Vec3f64::new(0.0, 0.0, 555.0),
         green,
-        Shape2D::Parallelogram,
     )));
     world.add(Arc::new(Quad::new(
         Point::new(0.0, 0.0, 0.0),
         Vec3f64::new(0.0, 555.0, 0.0),
         Vec3f64::new(0.0, 0.0, 555.0),
         red,
-        Shape2D::Parallelogram,
     )));
     world.add(Arc::new(Quad::new(
         Point::new(343.0, 554.0, 332.0),
         Vec3f64::new(-130.0, 0.0, 0.0),
         Vec3f64::new(0.0, 0.0, -105.0),
         light,
-        Shape2D::Parallelogram,
     )));
     world.add(Arc::new(Quad::new(
         Point::new(0.0, 0.0, 0.0),
         Vec3f64::new(555.0, 0.0, 0.0),
         Vec3f64::new(0.0, 0.0, 555.0),
         white.clone(),
-        Shape2D::Parallelogram,
     )));
     world.add(Arc::new(Quad::new(
         Point::new(555.0, 555.0, 555.0),
         Vec3f64::new(-555.0, 0.0, 0.0),
         Vec3f64::new(0.0, 0.0, -555.0),
         white.clone(),
-        Shape2D::Parallelogram,
     )));
     world.add(Arc::new(Quad::new(
         Point::new(0.0, 0.0, 555.0),
         Vec3f64::new(555.0, 0.0, 0.0),
         Vec3f64::new(0.0, 555.0, 0.0),
-        white,
-        Shape2D::Parallelogram,
+        white.clone(),
     )));
+
+    {
+        let mut box1 = HittableList::default();
+        box1.append(Quad::new_box(
+            &Point::new(0.0, 0.0, 0.0),
+            &Point::new(165.0, 330.0, 165.0),
+            white.clone(),
+        ));
+        let mut box1: Arc<dyn Hittable> = Arc::new(BVHNode::from(&mut box1));
+        box1= Arc::new(RotateY::new(box1, 15.0));
+        box1 = Arc::new(Translate::new(box1, Vec3f64::new(265.0, 0.0, 295.0)));
+        world.add(box1);
+    }
+    {
+        let mut box1 = HittableList::default();
+        box1.append(Quad::new_box(
+            &Point::new(0.0, 0.0, 0.0),
+            &Point::new(165.0, 165.0, 165.0),
+            white.clone(),
+        ));
+        let mut box1: Arc<dyn Hittable> = Arc::new(BVHNode::from(&mut box1));
+        box1 = Arc::new(RotateY::new(box1, -18.0));
+        box1 = Arc::new(Translate::new(box1, Vec3f64::new(130.0, 0.0, 65.0)));
+        world.add(box1);
+    }
 
     let world = BVHNode::from(&mut world);
 
@@ -439,8 +459,8 @@ fn cornell_box() {
         let mut c = Camera::default();
 
         c.aspect_ratio = 1.0;
-        c.image_width = 1000;
-        c.samples_per_pixel = 300;
+        c.image_width = 800;
+        c.samples_per_pixel = 100;
         c.max_depth = 50;
         c.background = Color::zero();
 

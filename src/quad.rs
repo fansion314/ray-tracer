@@ -66,7 +66,13 @@ pub struct Quad {
 }
 
 impl Quad {
-    pub fn new(q: Point, u: Vec3f64, v: Vec3f64, mat: Arc<dyn Material>, shape: Shape2D) -> Self {
+    pub fn with_shape(
+        q: Point,
+        u: Vec3f64,
+        v: Vec3f64,
+        mat: Arc<dyn Material>,
+        shape: Shape2D,
+    ) -> Self {
         let bbox = {
             let quv = &q + &u + &v;
             let qu = &q + &u;
@@ -99,6 +105,63 @@ impl Quad {
             d,
             contains_fn: shape.into(),
         }
+    }
+
+    pub fn new(q: Point, u: Vec3f64, v: Vec3f64, mat: Arc<dyn Material>) -> Self {
+        Self::with_shape(q, u, v, mat, Shape2D::Parallelogram)
+    }
+
+    pub fn new_box(a: &Point, b: &Point, mat: Arc<dyn Material>) -> Vec<Arc<dyn Hittable>> {
+        // Returns the 3D box (six sides) that contains the two opposite vertices a & b.
+
+        let mut sides: Vec<Arc<dyn Hittable>> = Vec::with_capacity(6);
+
+        // Construct the two opposite vertices with the minimum and maximum coordinates.
+        let min = Point::new(a[0].min(b[0]), a[1].min(b[1]), a[2].min(b[2]));
+        let max = Point::new(a[0].max(b[0]), a[1].max(b[1]), a[2].max(b[2]));
+
+        let dx = Vec3f64::new(max[0] - min[0], 0.0, 0.0);
+        let dy = Vec3f64::new(0.0, max[1] - min[1], 0.0);
+        let dz = Vec3f64::new(0.0, 0.0, max[2] - min[2]);
+
+        sides.push(Arc::new(Quad::new(
+            Point::new(min[0], min[1], max[2]),
+            dx.clone(),
+            dy.clone(),
+            mat.clone(),
+        ))); // front
+        sides.push(Arc::new(Quad::new(
+            Point::new(max[0], min[1], max[2]),
+            -dz.clone(),
+            dy.clone(),
+            mat.clone(),
+        ))); // right
+        sides.push(Arc::new(Quad::new(
+            Point::new(max[0], min[1], min[2]),
+            -dx.clone(),
+            dy.clone(),
+            mat.clone(),
+        ))); // back
+        sides.push(Arc::new(Quad::new(
+            Point::new(min[0], min[1], min[2]),
+            dz.clone(),
+            dy,
+            mat.clone(),
+        ))); // left
+        sides.push(Arc::new(Quad::new(
+            Point::new(min[0], max[1], max[2]),
+            dx.clone(),
+            -dz.clone(),
+            mat.clone(),
+        ))); // top
+        sides.push(Arc::new(Quad::new(
+            Point::new(min[0], min[1], min[2]),
+            dx,
+            dz,
+            mat.clone(),
+        ))); // bottom
+
+        sides
     }
 }
 

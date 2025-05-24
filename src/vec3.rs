@@ -93,9 +93,10 @@ impl Vec3f64 {
     pub fn random_unit_vector() -> Self {
         loop {
             let p = Self::random_range(-1.0, 1.0);
-            let lensq = p.length();
-            if 1e-160 < lensq {
-                return p / lensq;
+            let lensq = p.length_squared();
+            if 1e-160 < lensq && lensq <= 1.0 {
+                // 如果不加 lensq <= 1.0 效果会不同
+                return p / lensq.sqrt();
             }
         }
     }
@@ -227,6 +228,17 @@ where
         self.0[0] += x;
         self.0[1] += y;
         self.0[2] += z;
+    }
+}
+
+impl<'a, T> AddAssign<&'a Vec3<T>> for Vec3<T>
+where
+    T: AddAssign<&'a T>,
+{
+    fn add_assign(&mut self, rhs: &'a Vec3<T>) {
+        self.0[0] += rhs.x();
+        self.0[1] += rhs.y();
+        self.0[2] += rhs.z();
     }
 }
 

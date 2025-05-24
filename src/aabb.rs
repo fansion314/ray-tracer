@@ -1,7 +1,8 @@
 use crate::interval::{INTERVAL_EMPTY, INTERVAL_UNIVERSE};
 use crate::ray::Ray;
-use crate::vec3::Vec3;
+use crate::vec3::{Vec3, Vec3f64};
 use crate::{interval::Interval, vec3::Point};
+use std::ops::Add;
 
 pub type AABB = Vec3<Interval>;
 
@@ -34,7 +35,8 @@ impl AABB {
             Interval::from_intervals(&box0[0], &box1[0]),
             Interval::from_intervals(&box0[1], &box1[1]),
             Interval::from_intervals(&box0[2], &box1[2]),
-        ).pad_to_minimums()
+        )
+        .pad_to_minimums()
     }
 
     fn pad_to_minimums(mut self) -> Self {
@@ -109,5 +111,13 @@ impl AABB {
                 2
             }
         }
+    }
+}
+
+impl Add<&Vec3f64> for &AABB {
+    type Output = AABB;
+
+    fn add(self, rhs: &Vec3f64) -> Self::Output {
+        AABB::new(self.x() + rhs[0], self.y() + rhs[1], self.z() + rhs[2])
     }
 }
