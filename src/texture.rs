@@ -119,3 +119,40 @@ impl Texture for NoiseTexture {
         Color::all(0.5) * (1.0 + (self.scale * p.z() + 10.0 * self.noise.turb(p, 7)).sin())
     }
 }
+
+pub struct StackedPaddedTexture {
+    front: Arc<dyn Texture>,
+    back: Arc<dyn Texture>,
+    i_u: Interval,
+    i_v: Interval,
+}
+
+impl StackedPaddedTexture {
+    pub fn new(
+        front: Arc<dyn Texture>,
+        back: Arc<dyn Texture>,
+        i_u: Interval,
+        i_v: Interval,
+    ) -> Self {
+        Self {
+            front,
+            back,
+            i_u,
+            i_v,
+        }
+    }
+}
+
+impl Texture for StackedPaddedTexture {
+    fn value(&self, u: f64, v: f64, p: &Point) -> Color {
+        if self.i_u.contains(u) && self.i_v.contains(v) {
+            self.front.value(
+                (u - self.i_u.min) / self.i_u.size(),
+                (v - self.i_v.min) / self.i_v.size(),
+                p,
+            )
+        } else {
+            self.back.value(u, v, p)
+        }
+    }
+}
