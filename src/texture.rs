@@ -156,3 +156,33 @@ impl Texture for StackedPaddedTexture {
         }
     }
 }
+
+type UV = (f64, f64);
+
+pub struct SubTexture {
+    base: Arc<dyn Texture>,
+    uv: UV,
+    dir_u: UV,
+    dir_v: UV,
+}
+
+impl SubTexture {
+    pub fn new(base: Arc<dyn Texture>, uv0: UV, uv1: UV, uv2: UV) -> Self {
+        Self {
+            base,
+            uv: uv0,
+            dir_u: (uv1.0 - uv0.0, uv1.1 - uv0.1),
+            dir_v: (uv2.0 - uv0.0, uv2.1 - uv0.1),
+        }
+    }
+}
+
+impl Texture for SubTexture {
+    fn value(&self, u: f64, v: f64, p: &Point) -> Color {
+        self.base.value(
+            self.uv.0 + u * self.dir_u.0 + v * self.dir_v.0,
+            self.uv.1 + u * self.dir_u.1 + v * self.dir_v.1,
+            p,
+        )
+    }
+}

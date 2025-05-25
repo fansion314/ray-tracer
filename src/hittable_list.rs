@@ -16,11 +16,11 @@ impl HittableList {
         self.objects.push(object);
     }
 
-    pub fn append(&mut self, objects: Vec<Arc<dyn Hittable>>) {
-        for object in objects.into_iter() {
-            self.add(object);
-        }
-    }
+    // pub fn append(&mut self, objects: Vec<Arc<dyn Hittable>>) {
+    //     for object in objects.into_iter() {
+    //         self.add(object);
+    //     }
+    // }
 }
 
 impl Hittable for HittableList {

@@ -7,6 +7,7 @@ mod hittable;
 mod hittable_list;
 mod interval;
 mod material;
+mod model;
 mod perlin;
 mod quad;
 mod ray;
@@ -23,6 +24,7 @@ use crate::constant_medium::ConstantMedium;
 use crate::hittable::{Hittable, RotateY, Translate};
 use crate::hittable_list::HittableList;
 use crate::material::{Dielectric, DiffuseLight, Lambertian, Metal};
+use crate::model::Model;
 use crate::quad::{Quad, Shape2D};
 use crate::sphere::Sphere;
 use crate::texture::{
@@ -397,7 +399,7 @@ fn cornell_box() {
     let green = Arc::new(Lambertian::from(Color::new(0.12, 0.45, 0.15)));
     let light = Arc::new(DiffuseLight::from(Color::new(18.0, 18.0, 15.0)));
     let glass = Arc::new(Dielectric::new(1.5));
-    let mirror = Arc::new(Metal::new(Color::new(0.831, 0.686, 0.216), 0.05));
+    let mirror = Arc::new(Metal::new(Color::new(0.831, 0.686, 0.216), 0.01));
 
     let background1 = Arc::new(Lambertian::new(Arc::new(StackedPaddedTexture::new(
         Arc::new(ImageTexture::new("pic1.jpg")),
@@ -419,9 +421,9 @@ fn cornell_box() {
         red,
     ))); // right
     world.add(Arc::new(Quad::new(
-        Point::new(343.0, 554.0, 332.0),
-        Vec3f64::new(-130.0, 0.0, 0.0),
-        Vec3f64::new(0.0, 0.0, -105.0),
+        Point::new(368.0, 554.0, 365.0),
+        Vec3f64::new(-180.0, 0.0, 0.0),
+        Vec3f64::new(0.0, 0.0, -170.0),
         light,
     )));
     world.add(Arc::new(Quad::new(
@@ -455,8 +457,8 @@ fn cornell_box() {
             &Point::new(200.0, 200.0, 200.0),
             mirror,
         )));
-        b = Arc::new(RotateY::new(b, 20.0));
-        Arc::new(Translate::new(b, Vec3f64::new(230.0, 0.0, 270.0)))
+        b = Arc::new(RotateY::new(b, 25.0));
+        Arc::new(Translate::new(b, Vec3f64::new(250.0, 0.0, 270.0)))
     };
     world.add(box1);
 
@@ -464,7 +466,7 @@ fn cornell_box() {
     world.add(boundary.clone());
     world.add(Arc::new(ConstantMedium::from(
         boundary,
-        0.015,
+        0.010,
         Color::new(0.580, 0.0, 0.827),
     )));
 
@@ -716,8 +718,99 @@ pub fn final_scene(image_width: i32, samples_per_pixel: i32, max_depth: i32) {
     }
 }
 
+fn model_load() {
+    let mut world = HittableList::default();
+
+    let white_texture = Arc::new(SolidColor::from(Color::new(0.73, 0.73, 0.73)));
+
+    let red = Arc::new(Lambertian::from(Color::new(0.65, 0.05, 0.05)));
+    let white = Arc::new(Lambertian::new(white_texture.clone()));
+    let green = Arc::new(Lambertian::from(Color::new(0.12, 0.45, 0.15)));
+    let light = Arc::new(DiffuseLight::from(Color::new(18.0, 18.0, 15.0)));
+    // let glass = Arc::new(Dielectric::new(1.5));
+    let gold = Arc::new(Metal::new(Color::new(0.831, 0.686, 0.216), 0.08));
+
+    world.add(Arc::new(Quad::new(
+        Point::new(555.0, 0.0, 0.0),
+        Vec3f64::new(0.0, 0.0, 555.0),
+        Vec3f64::new(0.0, 555.0, 0.0),
+        green,
+    ))); // left
+    world.add(Arc::new(Quad::new(
+        Point::new(0.0, 0.0, 0.0),
+        Vec3f64::new(0.0, 555.0, 0.0),
+        Vec3f64::new(0.0, 0.0, 555.0),
+        red,
+    ))); // right
+    world.add(Arc::new(Quad::new(
+        Point::new(368.0, 554.0, 365.0),
+        Vec3f64::new(-180.0, 0.0, 0.0),
+        Vec3f64::new(0.0, 0.0, -170.0),
+        light,
+    )));
+    world.add(Arc::new(Quad::new(
+        Point::new(0.0, 0.0, 0.0),
+        Vec3f64::new(0.0, 0.0, 555.0),
+        Vec3f64::new(555.0, 0.0, 0.0),
+        white.clone(),
+    ))); // ground
+    world.add(Arc::new(Quad::new(
+        Point::new(555.0, 555.0, 555.0),
+        Vec3f64::new(-555.0, 0.0, 0.0),
+        Vec3f64::new(0.0, 0.0, -555.0),
+        white.clone(),
+    ))); // top
+    world.add(Arc::new(Quad::new(
+        Point::new(555.0, 0.0, 555.0),
+        Vec3f64::new(-555.0, 0.0, 0.0),
+        Vec3f64::new(0.0, 555.0, 0.0),
+        white.clone(),
+    ))); // back
+
+    let box1 = {
+        let mut b: Arc<dyn Hittable> = Arc::new(Model::with_mat("bunny.obj", gold, 1400.0));
+        b = Arc::new(RotateY::new(b, 165.0));
+        let y_move = -*&b.bounding_box()[1].min;
+        Arc::new(Translate::new(b, Vec3f64::new(130.0, y_move, 200.0)))
+    };
+    world.add(box1);
+
+    let box2 = {
+        let mut b: Arc<dyn Hittable> = Arc::new(Model::new("usagi-chiikawa.obj", 230.0));
+        b = Arc::new(RotateY::new(b, 190.0));
+        let y_move = -*&b.bounding_box()[1].min;
+        Arc::new(Translate::new(b, Vec3f64::new(400.0, y_move, 350.0)))
+    };
+    world.add(box2);
+
+    let world = BVHNode::from(world);
+
+    let camera = {
+        let mut c = Camera::default();
+
+        c.aspect_ratio = 1.0;
+        c.image_width = 1600;
+        c.samples_per_pixel = 10000;
+        c.max_depth = 80;
+        c.background = Color::zero();
+
+        c.vfov = 40.0;
+        c.lookfrom = Point::new(278.0, 278.0, -760.0);
+        c.lookat = Point::new(278.0, 278.0, 0.0);
+        c.vup = Vec3f64::new(0.0, 1.0, 0.0);
+
+        c.defocus_angle = 0.0;
+
+        c.with_initialized()
+    };
+
+    if let Err(e) = camera.render(&world, "model_load.png") {
+        eprintln!("Error: {e}");
+    }
+}
+
 fn main() {
-    match 7 {
+    match 10 {
         1 => bouncing_spheres(),
         2 => checkered_spheres(),
         3 => earth(),
@@ -727,6 +820,7 @@ fn main() {
         7 => cornell_box(),
         8 => cornell_smoke(),
         9 => final_scene(1600, 10000, 80),
+        10 => model_load(),
         _ => final_scene(400, 250, 4),
     };
 }

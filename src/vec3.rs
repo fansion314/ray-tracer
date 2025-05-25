@@ -137,6 +137,12 @@ impl Vec3f64 {
     }
 }
 
+impl<T: Clone> From<&[T]> for Vec3<T> {
+    fn from(value: &[T]) -> Self {
+        Self::new(value[0].clone(), value[1].clone(), value[2].clone())
+    }
+}
+
 impl<T> Index<usize> for Vec3<T> {
     type Output = T;
 

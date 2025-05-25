@@ -39,12 +39,7 @@ impl RtwImage {
             }
         }
 
-        eprintln!("ERROR: Could not load image file '{image_filename}'.");
-        Self {
-            width: 0,
-            height: 0,
-            bdata: None,
-        }
+        panic!("ERROR: Could not load image file '{image_filename}'.");
     }
 
     fn load(path: &PathBuf) -> Option<Self> {
