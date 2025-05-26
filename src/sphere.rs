@@ -112,11 +112,19 @@ impl Magnifier {
     pub fn new(p: Point, d: Vec3f64, h: f64, mat: Arc<dyn Material>) -> Self {
         let r = &d * (0.5 * (h * h / d.dot(&d) + 1.0));
         let c0 = &p + &d - &r;
-        let c1 = p - d + &r;
+        let c1 = &p - &d + &r;
         let r = r.length();
         let sph0 = Sphere::new(c0, r, mat.clone());
         let sph1 = Sphere::new(c1, r, mat);
-        let bbox = AABB::from_aabbs(sph0.bounding_box(), sph1.bounding_box()); // not efficient
+
+        let d_len = d.length();
+        let mut bbox = AABB::from_points(&Point::new(h, h, d_len), &Point::new(-h, -h, -d_len));
+        let yaw = d.x().atan2(*d.z());
+        bbox = bbox.rotate::<1>(yaw);
+        let pitch = d.y().atan2((d.x().powi(2) + d.z().powi(2)).sqrt());
+        bbox = bbox.rotate::<0>(pitch);
+        bbox = &bbox + &p;  // not efficient enough
+
         Self { sph0, sph1, bbox }
     }
 }

@@ -397,7 +397,7 @@ fn cornell_box() {
     let red = Arc::new(Lambertian::from(Color::new(0.65, 0.05, 0.05)));
     let white = Arc::new(Lambertian::new(white_texture.clone()));
     let green = Arc::new(Lambertian::from(Color::new(0.12, 0.45, 0.15)));
-    let light = Arc::new(DiffuseLight::from(Color::new(18.0, 18.0, 15.0)));
+    // let light = Arc::new(DiffuseLight::from(Color::new(18.0, 18.0, 15.0)));
     let glass = Arc::new(Dielectric::new(1.5));
     // let mirror = Arc::new(Metal::new(Color::new(0.831, 0.686, 0.216), 0.01));
 
@@ -471,7 +471,7 @@ fn cornell_box() {
     // )));
 
     world.add(Arc::new(Magnifier::new(
-        Point::new(555.0 * 0.5 - 15.0, 320.0, 555.0 * 0.75),
+        Point::new(555.0 * 0.5- 1.0, 306.0, 555.0 * 0.45),
         Vec3f64::new(0.0, 0.0, 20.0),
         555.0 * 0.2,
         glass,
@@ -488,7 +488,7 @@ fn cornell_box() {
         c.max_depth = 30;
         c.background = Color::zero();
 
-        c.vfov = 50.0;
+        c.vfov = 30.0;
         c.lookfrom = Point::new(278.0, 278.0, -760.0);
         c.lookat = Point::new(278.0, 278.0, 0.0);
         c.vup = Vec3f64::new(0.0, 1.0, 0.0);

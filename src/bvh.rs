@@ -22,9 +22,9 @@ impl BVHNode {
         let axis = bbox.longest_axis();
 
         let comparator = match axis {
-            0 => Self::box_compare_x,
-            1 => Self::box_compare_y,
-            _ => Self::box_compare_z,
+            0 => Self::box_compare::<0>,
+            1 => Self::box_compare::<1>,
+            _ => Self::box_compare::<2>,
         };
 
         let object_span = objects.len();
@@ -53,22 +53,10 @@ impl BVHNode {
         Self { left, right, bbox }
     }
 
-    fn box_compare(a: &dyn Hittable, b: &dyn Hittable, axis_index: usize) -> std::cmp::Ordering {
-        a.bounding_box()[axis_index]
+    fn box_compare<const AXIS: usize>(a: &dyn Hittable, b: &dyn Hittable) -> std::cmp::Ordering {
+        a.bounding_box()[AXIS]
             .min
-            .total_cmp(&b.bounding_box()[axis_index].min)
-    }
-
-    fn box_compare_x(a: &dyn Hittable, b: &dyn Hittable) -> std::cmp::Ordering {
-        Self::box_compare(a, b, 0)
-    }
-
-    fn box_compare_y(a: &dyn Hittable, b: &dyn Hittable) -> std::cmp::Ordering {
-        Self::box_compare(a, b, 1)
-    }
-
-    fn box_compare_z(a: &dyn Hittable, b: &dyn Hittable) -> std::cmp::Ordering {
-        Self::box_compare(a, b, 2)
+            .total_cmp(&b.bounding_box()[AXIS].min)
     }
 }
 

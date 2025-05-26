@@ -96,32 +96,7 @@ impl RotateY {
     pub fn new(object: Arc<dyn Hittable>, angle: f64) -> Self {
         let radians = degrees_to_radians(angle);
         let (sin_theta, cos_theta) = radians.sin_cos();
-        let bbox = object.bounding_box();
-
-        let mut min = Point::all(f64::INFINITY);
-        let mut max = Point::all(-f64::INFINITY);
-
-        for i in 0..2 {
-            for j in 0..2 {
-                for k in 0..2 {
-                    let x = i as f64 * bbox.x().max + (1 - i) as f64 * bbox.x().min;
-                    let y = j as f64 * bbox.y().max + (1 - j) as f64 * bbox.y().min;
-                    let z = k as f64 * bbox.z().max + (1 - k) as f64 * bbox.z().min;
-
-                    let newx = cos_theta * x + sin_theta * z;
-                    let newz = -sin_theta * x + cos_theta * z;
-
-                    let tester = Vec3f64::new(newx, y, newz);
-
-                    for c in 0..3 {
-                        min[c] = min[c].min(tester[c]);
-                        max[c] = max[c].max(tester[c]);
-                    }
-                }
-            }
-        }
-
-        let bbox = AABB::from_points(&min, &max);
+        let bbox = object.bounding_box().rotate::<1>(radians);
         Self {
             object,
             sin_theta,
