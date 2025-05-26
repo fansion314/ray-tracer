@@ -26,7 +26,7 @@ use crate::hittable_list::HittableList;
 use crate::material::{Dielectric, DiffuseLight, Lambertian, Metal};
 use crate::model::Model;
 use crate::quad::{Quad, Shape2D};
-use crate::sphere::Sphere;
+use crate::sphere::{Magnifier, Sphere};
 use crate::texture::{
     CheckerTexture, ImageTexture, NoiseTexture, SolidColor, StackedPaddedTexture,
 };
@@ -399,13 +399,13 @@ fn cornell_box() {
     let green = Arc::new(Lambertian::from(Color::new(0.12, 0.45, 0.15)));
     let light = Arc::new(DiffuseLight::from(Color::new(18.0, 18.0, 15.0)));
     let glass = Arc::new(Dielectric::new(1.5));
-    let mirror = Arc::new(Metal::new(Color::new(0.831, 0.686, 0.216), 0.01));
+    // let mirror = Arc::new(Metal::new(Color::new(0.831, 0.686, 0.216), 0.01));
 
-    let background1 = Arc::new(Lambertian::new(Arc::new(StackedPaddedTexture::new(
+    let background1 = Arc::new(DiffuseLight::new(Arc::new(StackedPaddedTexture::new(
         Arc::new(ImageTexture::new("pic1.jpg")),
         white_texture.clone(),
         (0.00..1.00).into(),
-        ((1.00 - 1.00 * 3712.0 / 5568.0)..1.00).into(),
+        ((1.00 - 1.00 * 1279.0 / 1706.0)..1.00).into(),
     ))));
 
     world.add(Arc::new(Quad::new(
@@ -420,12 +420,12 @@ fn cornell_box() {
         Vec3f64::new(0.0, 0.0, 555.0),
         red,
     ))); // right
-    world.add(Arc::new(Quad::new(
-        Point::new(368.0, 554.0, 365.0),
-        Vec3f64::new(-180.0, 0.0, 0.0),
-        Vec3f64::new(0.0, 0.0, -170.0),
-        light,
-    )));
+    // world.add(Arc::new(Quad::new(
+    //     Point::new(368.0, 554.0, 365.0),
+    //     Vec3f64::new(-180.0, 0.0, 0.0),
+    //     Vec3f64::new(0.0, 0.0, -170.0),
+    //     light,
+    // )));
     world.add(Arc::new(Quad::new(
         Point::new(0.0, 0.0, 0.0),
         Vec3f64::new(0.0, 0.0, 555.0),
@@ -445,29 +445,36 @@ fn cornell_box() {
         background1,
     ))); // back
 
-    world.add(Arc::new(Sphere::new(
-        Point::new(555.0 * 0.5, 343.0, 555.0 * 0.85),
-        30.0,
-        glass.clone(),
-    )));
+    // world.add(Arc::new(Sphere::new(
+    //     Point::new(555.0 * 0.5, 343.0, 555.0 * 0.85),
+    //     30.0,
+    //     glass.clone(),
+    // )));
 
-    let box1 = {
-        let mut b: Arc<dyn Hittable> = Arc::new(BVHNode::from(Quad::new_box(
-            &Point::new(0.0, 0.0, 0.0),
-            &Point::new(200.0, 200.0, 200.0),
-            mirror,
-        )));
-        b = Arc::new(RotateY::new(b, 25.0));
-        Arc::new(Translate::new(b, Vec3f64::new(250.0, 0.0, 270.0)))
-    };
-    world.add(box1);
+    // let box1 = {
+    //     let mut b: Arc<dyn Hittable> = Arc::new(BVHNode::from(Quad::new_box(
+    //         &Point::new(0.0, 0.0, 0.0),
+    //         &Point::new(200.0, 200.0, 200.0),
+    //         mirror,
+    //     )));
+    //     b = Arc::new(RotateY::new(b, 25.0));
+    //     Arc::new(Translate::new(b, Vec3f64::new(250.0, 0.0, 270.0)))
+    // };
+    // world.add(box1);
 
-    let boundary = Arc::new(Sphere::new(Point::new(156.0, 90.0, 135.0), 90.0, glass));
-    world.add(boundary.clone());
-    world.add(Arc::new(ConstantMedium::from(
-        boundary,
-        0.010,
-        Color::new(0.580, 0.0, 0.827),
+    // let boundary = Arc::new(Sphere::new(Point::new(156.0, 90.0, 135.0), 90.0, glass.clone()));
+    // world.add(boundary.clone());
+    // world.add(Arc::new(ConstantMedium::from(
+    //     boundary,
+    //     0.010,
+    //     Color::new(0.580, 0.0, 0.827),
+    // )));
+
+    world.add(Arc::new(Magnifier::new(
+        Point::new(555.0 * 0.5 - 15.0, 320.0, 555.0 * 0.75),
+        Vec3f64::new(0.0, 0.0, 20.0),
+        555.0 * 0.2,
+        glass,
     )));
 
     let world = BVHNode::from(world);
@@ -476,12 +483,12 @@ fn cornell_box() {
         let mut c = Camera::default();
 
         c.aspect_ratio = 1.0;
-        c.image_width = 1600;
-        c.samples_per_pixel = 10000;
-        c.max_depth = 80;
+        c.image_width = 1000;
+        c.samples_per_pixel = 200;
+        c.max_depth = 30;
         c.background = Color::zero();
 
-        c.vfov = 40.0;
+        c.vfov = 50.0;
         c.lookfrom = Point::new(278.0, 278.0, -760.0);
         c.lookat = Point::new(278.0, 278.0, 0.0);
         c.vup = Vec3f64::new(0.0, 1.0, 0.0);
@@ -810,7 +817,7 @@ fn model_load() {
 }
 
 fn main() {
-    match 10 {
+    match 7 {
         1 => bouncing_spheres(),
         2 => checkered_spheres(),
         3 => earth(),

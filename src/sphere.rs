@@ -101,3 +101,59 @@ impl Hittable for Sphere {
         &self.bbox
     }
 }
+
+pub struct Magnifier {
+    sph0: Sphere,
+    sph1: Sphere,
+    bbox: AABB,
+}
+
+impl Magnifier {
+    pub fn new(p: Point, d: Vec3f64, h: f64, mat: Arc<dyn Material>) -> Self {
+        let r = &d * (0.5 * (h * h / d.dot(&d) + 1.0));
+        let c0 = &p + &d - &r;
+        let c1 = p - d + &r;
+        let r = r.length();
+        let sph0 = Sphere::new(c0, r, mat.clone());
+        let sph1 = Sphere::new(c1, r, mat);
+        let bbox = AABB::from_aabbs(sph0.bounding_box(), sph1.bounding_box()); // not efficient
+        Self { sph0, sph1, bbox }
+    }
+}
+
+impl Hittable for Magnifier {
+    fn hit(&self, r: &Ray, ray_t: Interval) -> Option<HitRecord> {
+        let t_all = Interval::UNIVERSE;
+        let rec0 = self.sph0.hit(r, t_all)?;
+        let rec1 = self.sph1.hit(r, t_all)?;
+        if rec0.t < rec1.t {
+            let t_next = Interval::from(rec0.t + 0.0001, f64::INFINITY);
+            let rec2 = self.sph0.hit(r, t_next)?;
+            if rec2.t < rec1.t {
+                None
+            } else if ray_t.contains(rec1.t) {
+                Some(rec1)
+            } else if ray_t.contains(rec2.t) {
+                Some(rec2)
+            } else {
+                None
+            }
+        } else {
+            let t_next = Interval::from(rec1.t + 0.0001, f64::INFINITY);
+            let rec2 = self.sph1.hit(r, t_next)?;
+            if rec2.t < rec0.t {
+                None
+            } else if ray_t.contains(rec0.t) {
+                Some(rec0)
+            } else if ray_t.contains(rec2.t) {
+                Some(rec2)
+            } else {
+                None
+            }
+        }
+    }
+
+    fn bounding_box(&self) -> &AABB {
+        &self.bbox
+    }
+}

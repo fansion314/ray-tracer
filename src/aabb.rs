@@ -99,6 +99,10 @@ impl AABB {
             }
         }
     }
+
+    pub fn rotate(&self, axis: usize, angle: f64) -> Self {
+        todo!()
+    }
 }
 
 impl Add<&Vec3f64> for &AABB {
