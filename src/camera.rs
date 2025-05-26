@@ -12,11 +12,12 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 
 #[derive(Default)]
 pub struct Camera {
-    pub image_width: i32,       // Rendered image width in pixel count
-    pub aspect_ratio: f64,      // Ratio of image width over height
-    pub samples_per_pixel: i32, // Count of random samples for each pixel
-    pub max_depth: i32,         // Maximum number of ray bounces into scene
-    pub background: Color,      // Scene background color
+    pub image_width: i32,              // Rendered image width in pixel count
+    pub aspect_ratio: f64,             // Ratio of image width over height
+    pub samples_per_pixel: i32,        // Count of random samples for each pixel
+    pub max_depth: i32,                // Maximum number of ray bounces into scene
+    pub background: Color,             // Scene background color
+    pub sunlight_dir: Option<Vec3f64>, // Sunlight direction
 
     pub vfov: f64,       // Vertical view angle (field of view)
     pub lookfrom: Point, // Point camera is looking from
@@ -146,6 +147,8 @@ impl Camera {
         self.defocus_disk_u = &self.u * defocus_radius;
         self.defocus_disk_v = &self.v * defocus_radius;
 
+        self.sunlight_dir = self.sunlight_dir.map(|d| d.into_unit_vector());
+
         self
     }
 
@@ -199,7 +202,15 @@ impl Camera {
                 color_from_emission
             }
         } else {
-            self.background.clone()
+            if let Some(sun_light) = self.sunlight_dir.as_ref() {
+                if r.direction().unit_vector().dot(sun_light) < -0.99 {
+                    Color::all(20.0)
+                } else {
+                    self.background.clone()
+                }
+            } else {
+                self.background.clone()
+            }
         }
     }
 }
